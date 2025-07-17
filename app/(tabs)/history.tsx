@@ -7,13 +7,13 @@ const TABS = ['All', 'Feeding', 'Diaper', 'Sleep'];
 const DATA = [
   {
     type: 'Feeding',
-    icon: 'baby-bottle',
+    icon: 'drop.fill',
     time: '2:30 PM',
     details: 'Bottle • 4 oz',
   },
   {
     type: 'Diaper',
-    icon: 'circle.dotted',
+    icon: 'diaper-outline',
     time: '1:45 PM',
     details: 'Pee • Yellow',
   },
@@ -25,7 +25,7 @@ const DATA = [
   },
   {
     type: 'Feeding',
-    icon: 'circle.dotted',
+    icon: 'drop.fill',
     time: '10:30 AM',
     details: 'Breast • Left • 15 min',
   },
@@ -60,8 +60,8 @@ export default function HistoryScreen() {
 
       {/* Summary Row */}
       <View style={styles.summaryRow}>
-        <SummaryItem icon="circle.dotted" label="Feeding" count={6} />
-        <SummaryItem icon="circle.dotted" label="Diaper" count={8} />
+        <SummaryItem icon="drop.fill" label="Feeding" count={6} />
+        <SummaryItem icon="baby" label="Diaper" count={8} />
         <SummaryItem icon="moon.fill" label="Sleep" count={4} />
       </View>
 
