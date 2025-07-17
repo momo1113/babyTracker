@@ -25,7 +25,7 @@ export default function HomeScreen() {
       {/* Quick Actions */}
       <View style={styles.quickActions}>
         <QuickAction icon="drop.fill" label="Feeding" onPress={() => router.push('/feeding')}/>
-        <QuickAction icon="diaper" label="Diaper" onPress={() => router.push('/diapers')}/>
+        <QuickAction icon="baby" label="Diaper" onPress={() => router.push('/diapers')}/>
         <QuickAction icon="moon.fill" label="Sleeping" onPress={() => router.push('/sleeping')}/>
       </View>
 

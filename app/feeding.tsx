@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
   headerTitleRow: { flexDirection: 'row', alignItems: 'center' },
   headerTitle: { fontSize: 20, fontWeight: 'bold', marginLeft: 8, color: '#11181C' },
   label: { fontSize: 15, fontWeight: '500', marginTop: 18, marginBottom: 8, color: '#11181C' },
-  row: { flexDirection: 'row', gap: 12, marginBottom: 8 },
+  row: { flexDirection: 'row', marginBottom: 8 },
   selectBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F7F8F9', borderRadius: 10, paddingVertical: 14, gap: 6 },
   selectBtnActive: { backgroundColor: '#11181C' },
   selectBtnText: { fontSize: 15, color: '#687076' },
