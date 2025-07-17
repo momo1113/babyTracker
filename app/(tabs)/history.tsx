@@ -61,8 +61,8 @@ export default function HistoryScreen() {
       {/* Summary Row */}
       <View style={styles.summaryRow}>
         <SummaryItem icon="drop.fill" label="Feeding" count={6} />
-        <SummaryItem icon="baby" label="Diaper" count={8} />
-        <SummaryItem icon="moon.fill" label="Sleep" count={4} />
+        <SummaryItem icon="baby" label="Diapers" count={8} />
+        <SummaryItem icon="moon.fill" label="Sleeping" count={4} />
       </View>
 
       {/* Filter Tabs */}
@@ -105,9 +105,9 @@ export default function HistoryScreen() {
       </View>
 
       {/* Floating Add Button */}
-      <TouchableOpacity style={styles.fab}>
+      {/* <TouchableOpacity style={styles.fab}>
         <IconSymbol name="plus" size={28} color="#fff" />
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </ScrollView>
   );
 }

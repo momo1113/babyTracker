@@ -49,9 +49,6 @@ export default function ProfileScreen() {
           <Text style={styles.growthValue}>24.5 in</Text>
         </View>
         <View style={styles.growthBtnRow}>
-          <TouchableOpacity style={styles.growthBtn}>
-            <Text style={styles.growthBtnText}>➕ Add Growth Entry</Text>
-          </TouchableOpacity>
           <TouchableOpacity style={styles.growthBtnOutline}>
             <Text style={styles.growthBtnOutlineText}>📊 View Growth Chart</Text>
           </TouchableOpacity>

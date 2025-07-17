@@ -11,6 +11,24 @@ export default function SleepLogScreen() {
   const [location, setLocation] = useState('');
   const [quality, setQuality] = useState('');
 
+  const handleSave = async () => {
+  const payload = {
+    startTime,
+    endTime,
+    type,
+    location,
+    quality,
+    timestamp: new Date().toISOString(),
+  };
+
+  // Mock saving (replace with real API later)
+  console.log('Mock saving sleep log:', payload);
+
+  // Optional: add confirmation, toast, or navigate back
+  router.back();
+};
+
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {/* Header */}
@@ -18,17 +36,8 @@ export default function SleepLogScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <IconSymbol name="arrow.left" size={22} color="#687076" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Sleep Log</Text>
+        <Text style={styles.headerTitle}>Sleeping Log</Text>
         <View style={{ width: 22 }} />
-      </View>
-
-      {/* Icon and Title */}
-      <View style={styles.centered}>
-        <View style={styles.sleepIconCircle}>
-          <IconSymbol name="moon.fill" size={36} color="#687076" />
-        </View>
-        <Text style={styles.logSleepTitle}>Log Sleep</Text>
-        <Text style={styles.logSleepDesc}>Track your baby's sleep patterns</Text>
       </View>
 
       {/* Start Time */}
@@ -136,7 +145,7 @@ export default function SleepLogScreen() {
       {/* Action Buttons */}
       <View style={styles.actionRow}>
 
-        <TouchableOpacity style={styles.saveBtn}>
+        <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
           <Text style={styles.saveBtnText}>Save</Text>
         </TouchableOpacity>
       </View>
@@ -148,7 +157,12 @@ export default function SleepLogScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, backgroundColor: '#fff' },
+  container: {
+    padding: 20,
+    backgroundColor: '#fff',
+    flexGrow: 1,
+    justifyContent: 'flex-start',
+  },
   header: { flexDirection: 'row', paddingTop: 44, alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#11181C' },
   centered: { alignItems: 'center', marginBottom: 16 },
