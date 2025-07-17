@@ -7,7 +7,7 @@ const TABS = ['All', 'Feeding', 'Diaper', 'Sleep'];
 const DATA = [
   {
     type: 'Feeding',
-    icon: 'circle.dotted',
+    icon: 'baby-bottle',
     time: '2:30 PM',
     details: 'Bottle • 4 oz',
   },
