@@ -47,7 +47,6 @@ export default function HistoryScreen() {
 
   return (
     <ScrollView style={styles.container}>
-
       {/* Date Navigation */}
       <View style={styles.dateNav}>
         <TouchableOpacity>
@@ -125,7 +124,6 @@ function SummaryItem({ icon, label, count }: { icon: string; label: string; coun
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', paddingHorizontal: 0 },
-
   dateNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 8, marginTop: 72 },
   dateText: { fontSize: 16, color: '#11181C', marginHorizontal: 12 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 12, backgroundColor: '#F7F8F9' },
