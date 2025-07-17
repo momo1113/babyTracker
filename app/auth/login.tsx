@@ -1,10 +1,20 @@
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 
 export default function AuthScreen() {
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin, setIsLogin] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const router = useRouter();
+
+    const handlePress = () => {
+    if (isLogin) {
+      router.push('/(tabs)/home'); // Navigate to signup
+    } else {
+      router.push('/auth/signup'); // Or whatever path you want
+    }
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -43,7 +53,7 @@ export default function AuthScreen() {
       />
 
       {/* Action Button */}
-      <TouchableOpacity style={styles.actionBtn}>
+      <TouchableOpacity style={styles.actionBtn} onPress={handlePress}>
         <Text style={styles.actionBtnText}>{isLogin ? 'Log In' : 'Sign Up'}</Text>
       </TouchableOpacity>
 
