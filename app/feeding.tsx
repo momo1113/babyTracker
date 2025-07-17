@@ -15,7 +15,6 @@ export default function FeedingLogScreen() {
   const router = useRouter();
   return (
     <ScrollView contentContainerStyle={styles.container}>
-
        {/* Header with Back Button */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>

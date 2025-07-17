@@ -2,10 +2,37 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useRouter } from 'expo-router';
 
+const timelineData = [
+  {
+    type: 'Feeding',
+    time: '9:30 AM',
+    details: [
+      { label: 'Type', value: 'Breast (Left)' },
+      { label: 'Duration', value: '15 minutes' },
+    ],
+  },
+  {
+    type: 'Diaper',
+    time: '10:15 AM',
+    details: [
+      { label: 'Type', value: 'Poop' },
+      { label: 'Notes', value: 'Normal consistency' },
+    ],
+  },
+  {
+    type: 'Sleeping',
+    time: '12:00 PM',
+    details: [
+      { label: 'Duration', value: '1 hour' },
+      { label: 'Quality', value: 'Peaceful' },
+      { label: 'Notes', value: 'Slept well after crying' },
+    ],
+  },
+];
+
+
 export default function HomeScreen() {
-
   const router = useRouter();
-
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {/* Profile Section */}
@@ -45,31 +72,14 @@ export default function HomeScreen() {
             <IconSymbol name="calendar" size={16} color="#687076" />
           </TouchableOpacity>
         </View>
-        <TimelineItem
-          type="Feeding"
-          time="9:30 AM"
-          details={[
-            { label: 'Type', value: 'Breast (Left)' },
-            { label: 'Duration', value: '15 minutes' },
-          ]}
-        />
-        <TimelineItem
-          type="Diaper"
-          time="10:15 AM"
-          details={[
-            { label: 'Type', value: 'Poop' },
-            { label: 'Notes', value: 'Normal consistency' },
-          ]}
-        />
-        <TimelineItem
-          type="Sleeping"
-          time="12:00 PM"
-          details={[
-            { label: 'Duration', value: '1 hour' },
-            { label: 'Quality', value: 'Peaceful' },
-            { label: 'Notes', value: 'Slept well after crying' },
-       ]}
-  />
+        {timelineData.map((item, index) => (
+          <TimelineItem
+            key={index}
+            type={item.type}
+            time={item.time}
+            details={item.details}
+          />
+        ))}
       </View>
     </ScrollView>
   );
