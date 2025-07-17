@@ -8,12 +8,12 @@ export default function AuthScreen() {
   const [password, setPassword] = useState('');
   const router = useRouter();
 
-    const handlePress = () => {
-    if (isLogin) {
-      router.push('/(tabs)/home'); // Navigate to signup
-    } else {
-      router.push('/auth/signup'); // Or whatever path you want
-    }
+  const handlePress = () => {
+  if (isLogin) {
+    router.push('/(tabs)/home'); // Navigate to signup
+  } else {
+    router.push('/auth/signup'); // Or whatever path you want
+  }
   };
 
   return (

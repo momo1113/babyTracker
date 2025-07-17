@@ -6,18 +6,14 @@ export default function BabyProfileScreen() {
   const router = useRouter();
   const [name, setName] = useState('');
   const [dob, setDob] = useState('');
+  const [gender, setGender] = useState('');
+
+  const handlePress = () => {
+    router.push('/(tabs)/home'); // Navigate to signup
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backArrow}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Baby Profile</Text>
-        <View style={{ width: 24 }} />
-      </View>
-
       {/* Icon */}
       <View style={styles.iconCircle}>
         <Text style={styles.icon}>👶</Text>
@@ -52,6 +48,20 @@ export default function BabyProfileScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Gender Selection */}
+      <Text style={styles.label}>Gender</Text>
+      <View style={styles.genderRow}>
+        {['Male', 'Female', 'Prefer not to say'].map((option) => (
+          <TouchableOpacity
+            key={option}
+            style={styles.genderOption}
+            onPress={() => setGender(option)}
+          >
+            <View style={[styles.radioCircle, gender === option && styles.radioSelected]} />
+            <Text style={styles.genderText}>{option}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
       {/* Info Box */}
       <View style={styles.infoBox}>
         <Text style={styles.infoIcon}>ℹ️</Text>
@@ -64,16 +74,9 @@ export default function BabyProfileScreen() {
       </View>
 
       {/* Next Button */}
-      <TouchableOpacity style={styles.nextBtn}>
+      <TouchableOpacity style={styles.nextBtn} onPress={handlePress}>
         <Text style={styles.nextBtnText}>Next</Text>
       </TouchableOpacity>
-
-      {/* Progress Dots */}
-      <View style={styles.dotsRow}>
-        <View style={[styles.dot, styles.dotActive]} />
-        <View style={styles.dot} />
-        <View style={styles.dot} />
-      </View>
 
       {/* Privacy */}
       <Text style={styles.privacyText}>Your data stays private and secure</Text>
@@ -82,19 +85,21 @@ export default function BabyProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, backgroundColor: '#fff', padding: 24, alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: 16 },
-  backArrow: { fontSize: 22, color: '#687076', width: 24 },
-  headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#11181C', textAlign: 'center', flex: 1 },
+  container: { flexGrow: 1, backgroundColor: '#fff', padding: 24,paddingTop:52, alignItems: 'center' },
   iconCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#ECEDEE', alignItems: 'center', justifyContent: 'center', marginVertical: 24 },
   icon: { fontSize: 36 },
   title: { fontSize: 22, fontWeight: 'bold', color: '#11181C', textAlign: 'center', marginBottom: 4 },
   subtitle: { fontSize: 15, color: '#687076', textAlign: 'center', marginBottom: 24 },
   label: { fontSize: 15, color: '#11181C', fontWeight: '500', alignSelf: 'flex-start', marginBottom: 6, marginTop: 12 },
-  input: { backgroundColor: '#fff', borderColor: '#ECEDEE', borderWidth: 1, borderRadius: 10, padding: 14, fontSize: 16, color: '#11181C', marginBottom: 8, flex: 1 },
+  input: { backgroundColor: '#fff', borderColor: '#ECEDEE', borderWidth: 1, borderRadius: 10,paddingVertical: 10, paddingHorizontal: 14, fontSize: 15,color: '#11181C',marginBottom: 8,width: '100%'},
   dobRow: { flexDirection: 'row', alignItems: 'center', width: '100%' },
   calendarBtn: { position: 'absolute', right: 12, top: 8, padding: 4 },
   calendarIcon: { fontSize: 20, color: '#687076' },
+  genderRow: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 4,},
+  genderOption: { flexDirection: 'row', alignItems: 'center',},
+  radioCircle: { height: 16, width: 16, borderRadius: 8, borderWidth: 1.5,borderColor: '#687076',marginRight: 6, justifyContent: 'center', alignItems: 'center',},
+  radioSelected: { backgroundColor: '#11181C', borderColor: '#11181C',},
+  genderText: { fontSize: 14, color: '#11181C',},
   infoBox: { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: '#F7F8F9', borderRadius: 10, padding: 12, marginTop: 16, marginBottom: 24, width: '100%' },
   infoIcon: { fontSize: 18, color: '#687076', marginRight: 10, marginTop: 2 },
   infoTitle: { fontWeight: 'bold', color: '#11181C', fontSize: 15, marginBottom: 2 },
