@@ -53,7 +53,7 @@ export default function DiaperLogScreen() {
                   ? 'drop.fill'
                   : t === 'Poop'
                   ? 'leaf.fill'
-                  : 'circle.dotted'
+                  : 'circle.fill'
               }
               size={18}
               color={type === t ? '#fff' : '#687076'}

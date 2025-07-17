@@ -1,19 +1,21 @@
+import { Platform, StyleProp, ViewStyle } from 'react-native';
 import { SymbolView, SymbolViewProps, SymbolWeight } from 'expo-symbols';
-import { StyleProp, ViewStyle } from 'react-native';
 
 export function IconSymbol({
   name,
   size = 24,
-  color,
+  color = '#000',
   style,
   weight = 'regular',
 }: {
   name: SymbolViewProps['name'];
   size?: number;
-  color: string;
+  color?: string;
   style?: StyleProp<ViewStyle>;
   weight?: SymbolWeight;
 }) {
+  if (Platform.OS !== 'ios') return null;
+
   return (
     <SymbolView
       weight={weight}
