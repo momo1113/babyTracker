@@ -78,6 +78,12 @@ export default function BabyProfileScreen() {
         <Text style={styles.nextBtnText}>Next</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity onPress={() => router.push('/auth/login')}>
+      <Text style={styles.loginLink}>
+        Already have an account? <Text style={styles.loginLinkBold}>Log in</Text>
+      </Text>
+      </TouchableOpacity>
+
       {/* Privacy */}
       <Text style={styles.privacyText}>Your data stays private and secure</Text>
     </ScrollView>
@@ -106,6 +112,8 @@ const styles = StyleSheet.create({
   infoText: { color: '#687076', fontSize: 14 },
   nextBtn: { width: '100%', backgroundColor: '#11181C', borderRadius: 10, paddingVertical: 16, alignItems: 'center', marginTop: 16, marginBottom: 12 },
   nextBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  loginLink: { color: '#687076', fontSize: 14, marginTop: 16, textAlign: 'center',},
+  loginLinkBold: { fontWeight: 'bold', color: '#11181C'},
   dotsRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 24 },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#ECEDEE', marginHorizontal: 4 },
   dotActive: { backgroundColor: '#11181C' },
