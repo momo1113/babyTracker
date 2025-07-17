@@ -14,46 +14,56 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: '#000', // active text & icon color set to black
+        tabBarInactiveTintColor: '#687076', // optional: inactive color for contrast
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
         tabBarStyle: Platform.select({
           ios: {
-            // Use a transparent background on iOS to show the blur effect
             position: 'absolute',
           },
           default: {},
         }),
-      }}>
-      <Tabs.Screen
-        name="home"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="history"
-        options={{
-          title: 'History',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="calendar" color={color} />,
-        }}
-      />
-         <Tabs.Screen
-        name="insights"
-        options={{
-          title: 'Insights',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.bar.fill" color={color} />,
-        }}
-      />
-         <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
-        }}
-      />
-    </Tabs>
+      }}
+    >
+  <Tabs.Screen
+    name="home"
+    options={{
+      title: 'Home',
+      tabBarIcon: ({ color }) => (
+        <IconSymbol size={28} name="house.fill" color={color} />
+      ),
+    }}
+  />
+  <Tabs.Screen
+    name="history"
+    options={{
+      title: 'History',
+      tabBarIcon: ({ color }) => (
+        <IconSymbol size={28} name="calendar" color={color} />
+      ),
+    }}
+  />
+  <Tabs.Screen
+    name="insights"
+    options={{
+      title: 'Insights',
+      tabBarIcon: ({ color }) => (
+        <IconSymbol size={28} name="chart.bar.fill" color={color} />
+      ),
+    }}
+  />
+  <Tabs.Screen
+    name="profile"
+    options={{
+      title: 'Profile',
+      tabBarIcon: ({ color }) => (
+        <IconSymbol size={28} name="person.fill" color={color} />
+      ),
+    }}
+  />
+</Tabs>
+
   );
 }
