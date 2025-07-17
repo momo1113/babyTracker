@@ -8,11 +8,45 @@ export default function FeedingLogScreen() {
   const [side, setSide] = useState('Left');
   const [amount, setAmount] = useState('');
   const [unit, setUnit] = useState('oz');
-  const [time, setTime] = useState('12:30 PM');
-  const [date, setDate] = useState('01/15/2025');
   const [duration, setDuration] = useState('15');
   const [notes, setNotes] = useState('');
   const router = useRouter();
+
+
+  const handleSave = async () => {
+  const payload = {
+    feedingType,
+    side: feedingType === 'Breast' ? side : null,
+    amount: feedingType !== 'Breast' ? amount : null,
+    unit: feedingType !== 'Breast' ? unit : null,
+    duration,
+    notes,
+    timestamp: new Date().toISOString(), // you can adjust this
+  };
+
+  try {
+    const response = await fetch('https://your-api-url.com/feeding-logs', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to save feeding log');
+    }
+
+    const result = await response.json();
+    console.log('Saved successfully:', result);
+    router.back(); // navigate back or show confirmation
+  } catch (error) {
+    console.error('Save failed:', error);
+    // You might want to show a Toast or Alert here
+  }
+};
+
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
        {/* Header with Back Button */}
@@ -112,27 +146,6 @@ export default function FeedingLogScreen() {
         </>
       )}
 
-      {/* Time Started */}
-      <Text style={styles.label}>Time Started</Text>
-      <View style={styles.timeRow}>
-        <TextInput
-          style={styles.timeInput}
-          value={time}
-          onChangeText={setTime}
-        />
-        <TouchableOpacity>
-          <IconSymbol name="clock" size={18} color="#687076" />
-        </TouchableOpacity>
-        <TextInput
-          style={styles.dateInput}
-          value={date}
-          onChangeText={setDate}
-        />
-        <TouchableOpacity>
-          <IconSymbol name="calendar" size={18} color="#687076" />
-        </TouchableOpacity>
-      </View>
-
       {/* Duration */}
       <Text style={styles.label}>Duration</Text>
       <View style={styles.durationRow}>
@@ -141,12 +154,9 @@ export default function FeedingLogScreen() {
           value={duration}
           onChangeText={setDuration}
           keyboardType="numeric"
+          placeholder="e.g. 15"
         />
         <Text style={styles.durationText}>minutes</Text>
-        <TouchableOpacity style={styles.timerBtn}>
-          <IconSymbol name="play.fill" size={16} color="#687076" />
-          <Text style={styles.timerText}>Start Timer</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Notes */}
@@ -175,7 +185,7 @@ export default function FeedingLogScreen() {
       </View>
 
       {/* Save Button */}
-      <TouchableOpacity style={styles.saveBtn}>
+      <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
         <Text style={styles.saveBtnText}>Save</Text>
       </TouchableOpacity>
     </ScrollView>
