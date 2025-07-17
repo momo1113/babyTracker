@@ -38,27 +38,27 @@ export default function ProfileScreen() {
       </View>
 
       {/* Latest Growth Section */}
-  <View style={styles.growthSection}>
-    <Text style={styles.growthTitle}>📈 Latest Growth</Text>
-    <View style={styles.growthRow}>
-      <Text style={styles.growthLabel}>Weight:</Text>
-      <Text style={styles.growthValue}>14.2 lbs</Text>
-    </View>
-    <View style={styles.growthRow}>
-      <Text style={styles.growthLabel}>Height:</Text>
-      <Text style={styles.growthValue}>24.5 in</Text>
-    </View>
-    <View style={styles.growthBtnRow}>
-      <TouchableOpacity style={styles.growthBtn}>
-        <Text style={styles.growthBtnText}>➕ Add Growth Entry</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.growthBtnOutline}>
-        <Text style={styles.growthBtnOutlineText}>📊 View Growth Chart</Text>
-      </TouchableOpacity>
-    </View>
-  </View>
+      <View style={styles.growthSection}>
+        <Text style={styles.growthTitle}>📈 Latest Growth</Text>
+        <View style={styles.growthRow}>
+          <Text style={styles.growthLabel}>Weight:</Text>
+          <Text style={styles.growthValue}>14.2 lbs</Text>
+        </View>
+        <View style={styles.growthRow}>
+          <Text style={styles.growthLabel}>Height:</Text>
+          <Text style={styles.growthValue}>24.5 in</Text>
+        </View>
+        <View style={styles.growthBtnRow}>
+          <TouchableOpacity style={styles.growthBtn}>
+            <Text style={styles.growthBtnText}>➕ Add Growth Entry</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.growthBtnOutline}>
+            <Text style={styles.growthBtnOutlineText}>📊 View Growth Chart</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
       {/* Caregiver Information */}
-      <View style={styles.section}>
+      {/* <View style={styles.section}>
         <Text style={styles.sectionTitle}>Caregiver Information</Text>
         <View style={styles.profileRow}>
           <Image
@@ -82,7 +82,7 @@ export default function ProfileScreen() {
           <IconSymbol name="person.crop.circle" size={18} color="#687076" />
           <Text style={styles.editProfileBtnText}>Edit Profile</Text>
         </TouchableOpacity>
-      </View>
+      </View> */}
 
       {/* App Settings */}
       <View style={styles.section}>
@@ -139,13 +139,13 @@ const styles = StyleSheet.create({
   logoutBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F7F8F9', borderRadius: 8, paddingVertical: 16, justifyContent: 'center', margin: 16, marginBottom: 32 },
   logoutBtnText: { color: '#687076', fontSize: 16, fontWeight: 'bold', marginLeft: 8 },
   growthSection: { backgroundColor: '#F7F8F9', borderRadius: 10, padding: 12, marginTop: 16 },
-growthTitle: { fontSize: 15, fontWeight: 'bold', color: '#11181C', marginBottom: 8 },
-growthRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-growthLabel: { color: '#687076', fontSize: 14 },
-growthValue: { color: '#11181C', fontSize: 14, fontWeight: '500' },
-growthBtnRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
-growthBtn: { flex: 1, backgroundColor: '#11181C', borderRadius: 8, paddingVertical: 10, alignItems: 'center', marginRight: 4 },
-growthBtnText: { color: '#fff', fontSize: 14, fontWeight: 'bold' },
-growthBtnOutline: { flex: 1, borderWidth: 1, borderColor: '#11181C', borderRadius: 8, paddingVertical: 10, alignItems: 'center', marginLeft: 4 },
-growthBtnOutlineText: { color: '#11181C', fontSize: 14, fontWeight: 'bold' }
+  growthTitle: { fontSize: 15, fontWeight: 'bold', color: '#11181C', marginBottom: 8 },
+  growthRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+  growthLabel: { color: '#687076', fontSize: 14 },
+  growthValue: { color: '#11181C', fontSize: 14, fontWeight: '500' },
+  growthBtnRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  growthBtn: { flex: 1, backgroundColor: '#11181C', borderRadius: 8, paddingVertical: 10, alignItems: 'center', marginRight: 4 },
+  growthBtnText: { color: '#fff', fontSize: 14, fontWeight: 'bold' },
+  growthBtnOutline: { flex: 1, borderWidth: 1, borderColor: '#11181C', borderRadius: 8, paddingVertical: 10, alignItems: 'center', marginLeft: 4 },
+  growthBtnOutlineText: { color: '#11181C', fontSize: 14, fontWeight: 'bold' }
 });
