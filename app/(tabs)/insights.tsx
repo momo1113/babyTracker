@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import { IconSymbol } from '@/components/ui/IconSymbol';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Dimensions } from 'react-native';
+import { LineChart, BarChart, PieChart } from 'react-native-chart-kit';
 
 export default function InsightsScreen() {
   return (
@@ -16,9 +16,42 @@ export default function InsightsScreen() {
       {/* Sleep Trends */}
       <Text style={styles.sectionTitle}>{"\u{1F319}"} Sleep Trends</Text>
       <View style={styles.card}>
-        <View style={styles.chartPlaceholder}>
-          <Text style={styles.chartText}>Sleep Hours Chart</Text>
+        <View style={styles.lineChart}>
+          <LineChart
+            data={{
+              labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+              datasets: [
+                {
+                  data: [13.5, 14, 12.5, 14.2, 13.8, 15, 14.5],
+                },
+              ],
+            }}
+            width={Dimensions.get('window').width - 64}
+            height={200}
+            yAxisSuffix="h"
+            chartConfig={{
+              backgroundColor: '#F7F8F9',
+              backgroundGradientFrom: '#F7F8F9',
+              backgroundGradientTo: '#F7F8F9',
+              decimalPlaces: 1,
+              color: () => '#11181C',
+              labelColor: () => '#687076',
+              style: {
+                borderRadius: 12,
+              },
+              propsForDots: {
+                r: '4',
+                strokeWidth: '1',
+                stroke: '#11181C',
+              },
+            }}
+            bezier
+            style={{
+              borderRadius: 12,
+            }}
+          />
         </View>
+
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>2.5h</Text>
@@ -33,8 +66,8 @@ export default function InsightsScreen() {
             <Text style={styles.statLabel}>Total Sleep</Text>
           </View>
         </View>
+
         <View style={styles.infoBox}>
-          <IconSymbol name="exclamationmark.triangle" size={16} color="#F5A623" />
           <Text style={styles.infoText}>
             Baby usually naps every 2.5 hrs — last nap was 3.5 hrs ago
           </Text>
@@ -44,14 +77,40 @@ export default function InsightsScreen() {
       {/* Feeding Frequency */}
       <Text style={styles.sectionTitle}>{"\u{1F4D1}"} Feeding Frequency</Text>
       <View style={styles.card}>
-        <View style={styles.row}>
-          <View style={styles.cardBox}>
-            <Text style={styles.cardBoxTitle}>Daily Feedings</Text>
-          </View>
-          <View style={styles.cardBox}>
-            <Text style={styles.cardBoxTitle}>Method Breakdown</Text>
-          </View>
+        <View style={styles.barChart}>
+          <BarChart
+            data={{
+              labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+              datasets: [
+                {
+                  data: [7, 8, 9, 8, 7, 6, 8], // Mock feedings per day
+                },
+              ],
+            }}
+            width={Dimensions.get('window').width - 64}
+            height={200}
+            yAxisSuffix=""
+            fromZero
+            chartConfig={{
+              backgroundColor: '#F7F8F9',
+              backgroundGradientFrom: '#F7F8F9',
+              backgroundGradientTo: '#F7F8F9',
+              decimalPlaces: 0,
+              color: () => '#11181C',
+              labelColor: () => '#687076',
+              style: {
+                borderRadius: 12,
+              },
+              propsForBackgroundLines: {
+                stroke: '#ECEDEE',
+              },
+            }}
+            style={{
+              borderRadius: 12,
+            }}
+          />
         </View>
+
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>8</Text>
@@ -71,9 +130,43 @@ export default function InsightsScreen() {
       {/* Diaper Analysis */}
       <Text style={styles.sectionTitle}>{"\u{1F6BC}"} Diaper Analysis</Text>
       <View style={styles.card}>
-        <View style={styles.chartPlaceholder}>
-          <Text style={styles.chartText}>7-Day Diaper Changes</Text>
+        <View style={styles.pieChart}>
+          <PieChart
+            data={[
+              {
+                name: 'Pee',
+                count: 5,
+                color: '#3B82F6',
+                legendFontColor: '#687076',
+                legendFontSize: 14,
+              },
+              {
+                name: 'Poop',
+                count: 3,
+                color: '#8B5CF6',
+                legendFontColor: '#687076',
+                legendFontSize: 14,
+              },
+            ]}
+            width={Dimensions.get('window').width - 64}
+            height={180}
+            chartConfig={{
+              backgroundColor: '#F7F8F9',
+              backgroundGradientFrom: '#F7F8F9',
+              backgroundGradientTo: '#F7F8F9',
+              color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
+              labelColor: () => '#687076',
+              style: {
+                borderRadius: 12,
+              },
+            }}
+            accessor="count"
+            backgroundColor="transparent"
+            paddingLeft="20"
+            absolute
+          />
         </View>
+
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>8 Changes</Text>
@@ -86,8 +179,8 @@ export default function InsightsScreen() {
             <Text style={styles.statSubLabel}>Within normal range</Text>
           </View>
         </View>
+
         <View style={styles.infoBox}>
-          <IconSymbol name="info.circle" size={16} color="#687076" />
           <Text style={styles.infoText}>
             Only 2 wet diapers today — consider offering more fluids
           </Text>
@@ -98,13 +191,11 @@ export default function InsightsScreen() {
       <Text style={styles.sectionTitle}>AI Suggestions</Text>
       <View style={styles.card}>
         <View style={styles.suggestionBox}>
-          <IconSymbol name="info.circle" size={16} color="#687076" />
           <Text style={styles.suggestionText}>
             Baby usually poops every morning — try tummy time or massage if backed up.
           </Text>
         </View>
         <View style={styles.suggestionBox}>
-          <IconSymbol name="info.circle" size={16} color="#687076" />
           <Text style={styles.suggestionText}>
             Sleep patterns are consistent. Great job maintaining routine!
           </Text>
@@ -133,27 +224,94 @@ export default function InsightsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { backgroundColor: '#fff', paddingHorizontal: 0, paddingTop: 72, paddingBottom: 56 },
-  rangeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 8 },
+   container: {
+    padding: 20,
+    backgroundColor: '#fff',
+    flexGrow: 1,
+    justifyContent: 'flex-start',
+    paddingHorizontal: 0,
+    paddingTop: 72,
+    paddingBottom: 76,
+  },
+  rangeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    marginBottom: 8,
+  },
   rangeText: { fontSize: 15, color: '#687076' },
   rangeBtn: { fontSize: 15, color: '#687076' },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#11181C', marginTop: 18, marginBottom: 8, paddingHorizontal: 20 },
-  card: { backgroundColor: '#F7F8F9', borderRadius: 12, padding: 16, marginHorizontal: 16, marginBottom: 16 },
-  chartPlaceholder: { backgroundColor: '#ECEDEE', borderRadius: 8, height: 60, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  chartText: { color: '#687076', fontSize: 15 },
-  statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, marginBottom: 8 },
-  statItem: { flex: 1, alignItems: 'center', marginHorizontal: 2 },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#11181C',
+    marginTop: 18,
+    marginBottom: 8,
+    paddingHorizontal: 20,
+  },
+  card: {
+    backgroundColor: '#F7F8F9',
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 16,
+    marginBottom: 16,
+  },
+  lineChart: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  barChart: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  pieChart: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+    marginHorizontal: 6,
+  },
   statValue: { fontSize: 16, fontWeight: 'bold', color: '#11181C' },
   statLabel: { fontSize: 13, color: '#687076', marginTop: 2 },
   statSubLabel: { fontSize: 12, color: '#687076', marginTop: 1 },
-  infoBox: { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: '#fff', borderRadius: 8, padding: 10, marginTop: 8 },
-  infoText: { color: '#687076', fontSize: 13, marginLeft: 8, flex: 1 },
-  row: { flexDirection: 'row', gap: 12, marginBottom: 8 },
-  cardBox: { flex: 1, backgroundColor: '#ECEDEE', borderRadius: 8, padding: 12, alignItems: 'center', margin: 2 },
-  cardBoxTitle: { color: '#687076', fontSize: 14, fontWeight: 'bold' },
-  suggestionBox: { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: '#fff', borderRadius: 8, padding: 10, marginBottom: 8 },
-  suggestionText: { color: '#687076', fontSize: 13, marginLeft: 8, flex: 1 },
-  actionRow: { flexDirection: 'row', gap: 12, marginHorizontal: 16, marginBottom: 12 },
-  actionBtn: { flex: 1, backgroundColor: '#F7F8F9', borderRadius: 10, paddingVertical: 14, alignItems: 'center' },
+  infoBox: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 10,
+    marginTop: 8,
+  },
+  infoText: { color: '#687076', fontSize: 13 },
+  suggestionBox: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 8,
+  },
+  suggestionText: { color: '#687076', fontSize: 13 },
+  actionRow: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginBottom: 12,
+  },
+  actionBtn: {
+    flex: 1,
+    backgroundColor: '#F7F8F9',
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginHorizontal: 6,
+  },
   actionBtnText: { color: '#11181C', fontSize: 15, fontWeight: 'bold' },
 });
