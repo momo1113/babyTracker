@@ -1,27 +1,37 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, StyleSheet, ScrollView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 
 export default function DiaperLogScreen() {
   const router = useRouter();
+
   const [type, setType] = useState('Pee');
   const [time, setTime] = useState('12:30 PM');
   const [date, setDate] = useState('01/15/2025');
   const [consistency, setConsistency] = useState('');
   const [color, setColor] = useState('');
   const [notes, setNotes] = useState('');
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
-const handleSave = async () => {
+  const handleSave = async () => {
   const payload = {
     type,
     time,
     date,
-    consistency: type !== 'Pee' ? consistency : null,
-    color: type !== 'Pee' ? color : null,
     notes,
     timestamp: new Date().toISOString(),
   };
+
+  // Only include consistency and color if type is Poop or Both
+  if (type !== 'Pee') {
+    payload.consistency = consistency;
+    payload.color = color;
+  }
+
+  console.log('Saving payload:', payload);
 
   try {
     const response = await fetch('http://localhost:3000/diaper', {
@@ -31,70 +41,170 @@ const handleSave = async () => {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to save diaper log');
+      const errorData = await response.json();
+      console.error('Save failed:', errorData);
+      alert(`Error: ${errorData.error || 'Save failed'}`);
+      return;
     }
 
     const data = await response.json();
-    console.log('Diaper log saved:', data);
-
+    console.log('Save successful:', data);
     router.back();
   } catch (error) {
-    console.error('Error saving diaper log:', error);
-    // Optionally: alert the user
+    console.error('Network error:', error);
+    alert('Network error, please try again.');
   }
 };
 
+  const onSelectType = (t) => {
+    setType(t);
+    if (t === 'Pee') {
+      setConsistency('');
+      setColor('');
+    }
+  };
+
+  const formatTime = (selectedDate) => {
+    const hours = selectedDate.getHours();
+    const minutes = selectedDate.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const formattedTime = `${((hours + 11) % 12 + 1)}:${String(minutes).padStart(2, '0')} ${ampm}`;
+    return formattedTime;
+  };
+
+  const formatDate = (selectedDate) => {
+    const month = selectedDate.getMonth() + 1;
+    const day = selectedDate.getDate();
+    const year = selectedDate.getFullYear();
+    return `${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')}/${year}`;
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.header}><TouchableOpacity onPress={() => router.back()}><IconSymbol name="chevron.backward" size={22} color="#687076" /></TouchableOpacity><Text style={styles.headerTitle}>Diaper Log</Text><View style={{ width: 22 }} /></View>
-      <Text style={styles.label}>Diaper Type</Text>
-      <View style={styles.row}>{['Pee', 'Poop', 'Both'].map(t => (
-        <TouchableOpacity
-          key={t}
-          style={[styles.selectBtn, type === t && styles.selectBtnActive]}
-          onPress={() => setType(t)}
-        >
-          <IconSymbol
-            name={
-              t === 'Pee'
-                ? 'drop.fill'
-                : t === 'Poop'
-                ? 'leaf.fill'
-                : 'circle'
-            }
-            size={18}
-            color={type === t ? '#fff' : '#687076'}
-          />
-          <Text style={[styles.selectBtnText, type === t && styles.selectBtnTextActive]}>{t}</Text>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <IconSymbol name="chevron.backward" size={22} color="#687076" />
         </TouchableOpacity>
-      ))}</View>
+        <Text style={styles.headerTitle}>Diaper Log</Text>
+        <View style={{ width: 22 }} />
+      </View>
+
+      {/* Type Picker */}
+      <Text style={styles.label}>Diaper Type</Text>
+      <View style={styles.row}>
+        {['Pee', 'Poop', 'Both'].map(t => (
+          <TouchableOpacity
+            key={t}
+            style={[styles.selectBtn, type === t && styles.selectBtnActive]}
+            onPress={() => onSelectType(t)}
+          >
+            <IconSymbol
+              name={
+                t === 'Pee' ? 'drop.fill' : t === 'Poop' ? 'leaf.fill' : 'circle'
+              }
+              size={18}
+              color={type === t ? '#fff' : '#687076'}
+            />
+            <Text style={[styles.selectBtnText, type === t && styles.selectBtnTextActive]}>
+              {t}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Time + Date Picker */}
       <Text style={styles.label}>Time</Text>
       <View style={styles.timeRow}>
-        <TextInput style={styles.timeInput} value={time} onChangeText={setTime} />
+        <TouchableOpacity onPress={() => setShowTimePicker(true)} style={styles.timeInput}>
+          <Text style={{ color: '#11181C' }}>{time || 'Select time'}</Text>
+        </TouchableOpacity>
         <IconSymbol name="clock" size={18} color="#687076" />
-        <TextInput style={styles.dateInput} value={date} onChangeText={setDate} />
+        <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.dateInput}>
+          <Text style={{ color: '#11181C' }}>{date || 'Select date'}</Text>
+        </TouchableOpacity>
         <IconSymbol name="calendar" size={18} color="#687076" />
       </View>
+
+      {showTimePicker && (
+        <DateTimePicker
+          value={new Date()}
+          mode="time"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={(event, selectedDate) => {
+            setShowTimePicker(false);
+            if (selectedDate) setTime(formatTime(selectedDate));
+          }}
+        />
+      )}
+
+      {showDatePicker && (
+        <DateTimePicker
+          value={new Date()}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={(event, selectedDate) => {
+            setShowDatePicker(false);
+            if (selectedDate) setDate(formatDate(selectedDate));
+          }}
+        />
+      )}
+
+      {/* Consistency (Poop only) */}
       <Text style={styles.label}>Consistency (Poop)</Text>
-      <View style={styles.gridRow}>{['Soft', 'Firm', 'Loose', 'Watery'].map(c => (
-        <TouchableOpacity
-          key={c}
-          style={[styles.gridBtn, consistency === c && styles.gridBtnActive]}
-          onPress={() => setConsistency(c)}
-        >
-          <Text style={[styles.gridBtnText, consistency === c && styles.gridBtnTextActive]}>{c}</Text>
-        </TouchableOpacity>
-      ))}</View>
+      <View style={styles.gridRow}>
+        {['Soft', 'Firm', 'Loose', 'Watery'].map(c => (
+          <TouchableOpacity
+            key={c}
+            style={[
+              styles.gridBtn,
+              consistency === c && styles.gridBtnActive,
+              type === 'Pee' && { opacity: 0.5 },
+            ]}
+            onPress={() => type !== 'Pee' && setConsistency(c)}
+            disabled={type === 'Pee'}
+          >
+            <Text
+              style={[
+                styles.gridBtnText,
+                consistency === c && styles.gridBtnTextActive,
+                type === 'Pee' && { color: '#ccc' },
+              ]}
+            >
+              {c}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Color (Poop only) */}
       <Text style={styles.label}>Color (Poop)</Text>
-      <View style={styles.gridRow}>{['Yellow', 'Brown', 'Green'].map(col => (
-        <TouchableOpacity
-          key={col}
-          style={[styles.gridBtn, color === col && styles.gridBtnActive]}
-          onPress={() => setColor(col)}
-        >
-          <Text style={[styles.gridBtnText, color === col && styles.gridBtnTextActive]}>{col}</Text>
-        </TouchableOpacity>
-      ))}</View>
+      <View style={styles.gridRow}>
+        {['Yellow', 'Brown', 'Green'].map(col => (
+          <TouchableOpacity
+            key={col}
+            style={[
+              styles.gridBtn,
+              color === col && styles.gridBtnActive,
+              type === 'Pee' && { opacity: 0.5 },
+            ]}
+            onPress={() => type !== 'Pee' && setColor(col)}
+            disabled={type === 'Pee'}
+          >
+            <Text
+              style={[
+                styles.gridBtnText,
+                color === col && styles.gridBtnTextActive,
+                type === 'Pee' && { color: '#ccc' },
+              ]}
+            >
+              {col}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Notes */}
       <Text style={styles.label}>Notes (Optional)</Text>
       <TextInput
         style={styles.notesInput}
@@ -103,6 +213,8 @@ const handleSave = async () => {
         placeholder="Add any notes about this diaper change..."
         multiline
       />
+
+      {/* Save Button */}
       <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
         <Text style={styles.saveBtnText}>Save</Text>
       </TouchableOpacity>
