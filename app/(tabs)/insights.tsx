@@ -91,7 +91,7 @@ export default function InsightsScreen() {
         {/* Sleep Trends */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            <IconSymbol name="bed-outline" size={20} color="#687076" /> Sleep Trends
+            <IconSymbol name="moon.fill" size={20} color="#687076" /> Sleep Trends
           </Text>
           <View style={styles.card}>
             <ScrollView horizontal={true} showsHorizontalScrollIndicator={true} style={styles.chartScroll}>
@@ -136,7 +136,7 @@ export default function InsightsScreen() {
         {/* Feeding Frequency */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            <IconSymbol name="baby-bottle-outline" size={20} color="#687076" /> Feeding Frequency
+            <IconSymbol name="drop.fill" size={20} color="#687076" /> Feeding Frequency
           </Text>
           <View style={styles.card}>
             <ScrollView horizontal={true} showsHorizontalScrollIndicator={true} style={styles.chartScroll}>
@@ -176,7 +176,7 @@ export default function InsightsScreen() {
         {/* Diaper Analysis */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            <IconSymbol name="paper-towel" size={20} color="#687076" /> Diaper Analysis
+            <IconSymbol name="bandage.fill" size={20} color="#687076" /> Diaper Analysis
           </Text>
           <View style={styles.card}>
             <View style={styles.chartContainer}>
