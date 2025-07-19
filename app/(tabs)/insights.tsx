@@ -78,7 +78,7 @@ export default function InsightsScreen() {
   return (
     <View style={styles.containerWrapper}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Insights</Text>
+        <Text style={styles.headerTitle}>Date Range</Text>
         <Pressable
           onPress={toggleDropdown}
           style={({ pressed }) => [styles.dropdownButton, pressed && styles.pressed]}

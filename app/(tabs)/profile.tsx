@@ -64,15 +64,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
       </View>
-
-      {/* App Settings */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>App Settings</Text>
-        <ProfileItem icon="bell" label="Notifications" />
-        <ProfileItem icon="arrow.down.to.line" label="Export Data" />
-        <ProfileItem icon="shield" label="Privacy & Security" />
-      </View>
-
+      
       {/* Support */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Support</Text>
