@@ -1,8 +1,11 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Image } from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { useRouter } from 'expo-router';
 
 export default function ProfileScreen() {
+  const router = useRouter();
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {/* Baby Information */}
@@ -49,7 +52,7 @@ export default function ProfileScreen() {
           <Text style={styles.growthValue}>24.5 in</Text>
         </View>
         <View style={styles.growthBtnRow}>
-          <TouchableOpacity style={styles.growthBtnOutline}>
+          <TouchableOpacity style={styles.growthBtnOutline} onPress={() => router.push('/(screens)/GrowthChartScreen')}>
             <Text style={styles.growthBtnOutlineText}>📊 View Growth Chart</Text>
           </TouchableOpacity>
         </View>
