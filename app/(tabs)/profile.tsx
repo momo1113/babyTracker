@@ -13,7 +13,7 @@ export default function ProfileScreen() {
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>Baby Information</Text>
           <TouchableOpacity>
-            <Text style={styles.editText}>✎ Edit</Text>
+            <Text style={styles.editText} onPress={() => router.push('/(screens)/edit-baby')}>✎ Edit</Text>
           </TouchableOpacity>
         </View>
         <View style={styles.profileRow}>
