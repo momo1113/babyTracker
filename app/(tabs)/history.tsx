@@ -61,7 +61,7 @@ export default function HistoryScreen() {
       {/* Summary Row */}
       <View style={styles.summaryRow}>
         <SummaryItem icon="drop.fill" label="Feeding" count={6} />
-        <SummaryItem icon="baby" label="Diapers" count={8} />
+        <SummaryItem icon="bandage.fill" label="Diapers" count={8} />
         <SummaryItem icon="moon.fill" label="Sleeping" count={4} />
       </View>
 

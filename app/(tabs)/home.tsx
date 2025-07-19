@@ -1,9 +1,13 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import Modal from 'react-native-modal';
+import { Calendar } from 'react-native-calendars';
 
 const timelineData = [
   {
+    date: '2025-07-18',
     type: 'Feeding',
     time: '9:30 AM',
     details: [
@@ -12,6 +16,7 @@ const timelineData = [
     ],
   },
   {
+    date: '2025-07-18',
     type: 'Diaper',
     time: '10:15 AM',
     details: [
@@ -20,6 +25,7 @@ const timelineData = [
     ],
   },
   {
+    date: '2025-07-18',
     type: 'Sleeping',
     time: '12:00 PM',
     details: [
@@ -28,16 +34,49 @@ const timelineData = [
       { label: 'Notes', value: 'Slept well after crying' },
     ],
   },
+  {
+    date: '2025-07-17',
+    type: 'Feeding',
+    time: '8:00 AM',
+    details: [
+      { label: 'Type', value: 'Formula' },
+      { label: 'Amount', value: '4 oz' },
+    ],
+  },
 ];
-
 
 export default function HomeScreen() {
   const router = useRouter();
+  const [isModalVisible, setModalVisible] = useState(false);
+  const [selectedDate, setSelectedDate] = useState('2025-07-18'); // Default to today
+
+  const toggleModal = () => {
+    setModalVisible(!isModalVisible);
+  };
+
+  const handleDateSelect = (day) => {
+    setSelectedDate(day.dateString);
+    console.log('Selected date:', day.dateString);
+    toggleModal();
+  };
+
+  // Filter timelineData based on selectedDate
+  const filteredTimeline = timelineData.filter((item) => item.date === selectedDate);
+
+  // Format date for display (e.g., "July 18, 2025")
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {/* Profile Section */}
       <View style={styles.profileSection}>
-        {/* Avatar */}
         <View style={styles.avatar} />
         <View style={styles.profileInfo}>
           <Text style={styles.profileName}>Emma</Text>
@@ -52,7 +91,7 @@ export default function HomeScreen() {
       {/* Quick Actions */}
       <View style={styles.quickActions}>
         <QuickAction icon="drop.fill" label="Feeding" onPress={() => router.push('/(screens)/feeding')}/>
-        <QuickAction icon="baby" label="Diaper" onPress={() => router.push('/(screens)/diapers')}/>
+        <QuickAction icon="bandage.fill" label="Diaper" onPress={() => router.push('/(screens)/diapers')}/>
         <QuickAction icon="moon.fill" label="Sleeping" onPress={() => router.push('/(screens)/sleeping')}/>
       </View>
 
@@ -66,21 +105,54 @@ export default function HomeScreen() {
       {/* Timeline */}
       <View style={styles.section}>
         <View style={styles.timelineHeader}>
-          <Text style={styles.sectionTitle}>Today's Timeline</Text>
-          <TouchableOpacity style={styles.calendarBtn}>
+          <Text style={styles.sectionTitle}>
+            Timeline for {formatDate(selectedDate)}
+          </Text>
+          <TouchableOpacity style={styles.calendarBtn} onPress={toggleModal}>
             <Text style={styles.calendarText}>View Calendar</Text>
             <IconSymbol name="calendar" size={16} color="#687076" />
           </TouchableOpacity>
         </View>
-        {timelineData.map((item, index) => (
-          <TimelineItem
-            key={index}
-            type={item.type}
-            time={item.time}
-            details={item.details}
-          />
-        ))}
+        {filteredTimeline.length > 0 ? (
+          filteredTimeline.map((item, index) => (
+            <TimelineItem
+              key={index}
+              type={item.type}
+              time={item.time}
+              details={item.details}
+            />
+          ))
+        ) : (
+          <Text style={styles.noEventsText}>No events for this date</Text>
+        )}
       </View>
+
+      {/* Calendar Modal */}
+      <Modal
+        isVisible={isModalVisible}
+        onBackdropPress={toggleModal}
+        style={styles.modal}
+      >
+        <View style={styles.modalContent}>
+          <Calendar
+            onDayPress={handleDateSelect}
+            markedDates={{
+              [selectedDate]: { selected: true, selectedColor: '#8FB89C' },
+            }}
+            theme={{
+              selectedDayBackgroundColor: '#8FB89C',
+              todayTextColor: '#2D3A2E',
+              arrowColor: '#687076',
+              monthTextColor: '#2D3A2E',
+              textDayFontWeight: '400',
+              textMonthFontWeight: 'bold',
+            }}
+          />
+          <TouchableOpacity style={styles.closeButton} onPress={toggleModal}>
+            <Text style={styles.closeButtonText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -102,6 +174,7 @@ function QuickAction({
     </TouchableOpacity>
   );
 }
+
 // Suggestion Card
 function Suggestion({ text }: { text: string }) {
   return (
@@ -122,12 +195,21 @@ function TimelineItem({
   time: string;
   details: { label: string; value: string }[];
 }) {
+  const iconMap = {
+    Feeding: 'baby-bottle-outline',
+    Diaper: 'paper-towel',
+    Sleeping: 'bed-outline',
+  };
+
   return (
     <View style={styles.timelineItem}>
       <View style={styles.timelineDot} />
       <View style={styles.timelineContent}>
         <View style={styles.timelineHeaderRow}>
-          <Text style={styles.timelineType}>{type}</Text>
+          <View style={styles.timelineTypeContainer}>
+            <IconSymbol name={iconMap[type]} size={16} color="#687076" />
+            <Text style={[styles.timelineType, { marginLeft: 4 }]}>{type}</Text>
+          </View>
           <Text style={styles.timelineTime}>{time}</Text>
         </View>
         {details.map((d, i) => (
@@ -139,9 +221,9 @@ function TimelineItem({
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: { padding: 24, paddingTop: 64, backgroundColor: '#F6F7F4' },
-
   profileSection: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   avatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#C5D7BD', marginRight: 12 },
   profileInfo: { flex: 1 },
@@ -149,7 +231,6 @@ const styles = StyleSheet.create({
   profileAge: { fontSize: 14, color: '#7A867B' },
   lastSeen: { flexDirection: 'row', alignItems: 'center' },
   lastSeenText: { marginLeft: 4, fontSize: 12, color: '#7A867B' },
-
   quickActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -164,10 +245,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   quickActionLabel: { marginTop: 8, fontSize: 15, color: '#2D3A2E' },
-
   section: { marginBottom: 16 },
   sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 8, color: '#2D3A2E' },
-
   suggestion: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -177,7 +256,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   suggestionText: { marginLeft: 8, color: '#7A867B', fontSize: 14 },
-
   timelineHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -186,7 +264,6 @@ const styles = StyleSheet.create({
   },
   calendarBtn: { flexDirection: 'row', alignItems: 'center' },
   calendarText: { marginRight: 4, color: '#7A867B', fontSize: 13 },
-
   timelineItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -214,6 +291,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 4,
+    alignItems: 'center',
+  },
+  timelineTypeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   timelineType: {
     fontSize: 13,
@@ -226,4 +308,27 @@ const styles = StyleSheet.create({
   },
   timelineTime: { fontSize: 12, color: '#7A867B' },
   timelineDetail: { fontSize: 13, color: '#2D3A2E', marginTop: 2 },
+  noEventsText: { fontSize: 14, color: '#7A867B', textAlign: 'center' },
+  modal: {
+    justifyContent: 'center',
+    margin: 0,
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    marginHorizontal: 20,
+    alignItems: 'center',
+  },
+  closeButton: {
+    marginTop: 16,
+    padding: 10,
+    backgroundColor: '#E9F2EC',
+    borderRadius: 8,
+  },
+  closeButtonText: {
+    color: '#2D3A2E',
+    fontSize: 16,
+    fontWeight: '500',
+  },
 });
