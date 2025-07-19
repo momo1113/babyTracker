@@ -57,7 +57,7 @@ export default function ProfileScreen() {
         <View style={styles.growthBtnRow}>
           <TouchableOpacity
             style={styles.growthBtnOutline}
-            onPress={() => router.push('/(screens)/GrowthChartScreen')}
+            onPress={() => router.push('/(screens)/growth-chart')}
             accessibilityLabel="View growth chart"
           >
             <Text style={styles.growthBtnOutlineText}>📊 View Growth Chart</Text>
