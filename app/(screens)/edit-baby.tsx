@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
 import Modal from 'react-native-modal';
 import { Calendar } from 'react-native-calendars';
 import { useRouter } from 'expo-router';
@@ -40,6 +47,16 @@ export default function EditBabyScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      {/* Back Button */}
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => router.back()}
+        accessibilityLabel="Go back to previous screen"
+      >
+        <IconSymbol name="chevron.backward" size={22} color="#687076" />
+        <Text style={styles.backButtonText}>Back</Text>
+      </TouchableOpacity>
+
       <Text style={styles.header}>✏️ Edit Baby Profile</Text>
 
       <Text style={styles.label}>Date of Birth</Text>
@@ -165,9 +182,40 @@ export default function EditBabyScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, backgroundColor: '#F6F7F4', paddingTop: 72, paddingBottom: 100 },
-  header: { fontSize: 20, fontWeight: 'bold', color: '#2D3A2E', marginBottom: 16 },
-  label: { fontSize: 14, color: '#7A867B', marginBottom: 4 },
+  container: {
+    padding: 16,
+    backgroundColor: '#F6F7F4',
+    paddingTop: 76,
+    paddingBottom: 100,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 60,
+    left: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    zIndex: 1,
+  },
+  backButtonText: {
+    fontSize: 14,
+    color: '#2D3A2E',
+    marginLeft: 4,
+    fontWeight: '500',
+  },
+  header: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2D3A2E',
+    marginTop: 32,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  label: {
+    fontSize: 14,
+    color: '#7A867B',
+    marginBottom: 4,
+  },
   input: {
     borderWidth: 1,
     borderColor: '#C5D7BD',
@@ -181,7 +229,12 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#2D3A2E', marginVertical: 12 },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2D3A2E',
+    marginVertical: 12,
+  },
   growthRow: {
     flexDirection: 'row',
     gap: 8,
@@ -259,7 +312,11 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
-  addBtnText: { fontSize: 15, color: '#2D3A2E', fontWeight: '600' },
+  addBtnText: {
+    fontSize: 15,
+    color: '#2D3A2E',
+    fontWeight: '600',
+  },
   saveBtn: {
     backgroundColor: '#8FB89C',
     borderRadius: 12,
@@ -270,5 +327,9 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
-  saveBtnText: { color: '#2D3A2E', fontSize: 16, fontWeight: 'bold' },
+  saveBtnText: {
+    color: '#2D3A2E',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 });

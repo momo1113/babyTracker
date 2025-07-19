@@ -15,7 +15,7 @@ export default function GrowthChartScreen() {
         style={styles.backButton}
         accessibilityLabel="Go back to previous screen"
       >
-        <IconSymbol name="chevron-left" size={22} color="#687076" />
+        <IconSymbol name="chevron.backward" size={22} color="#687076" />
         <Text style={styles.backText}>Back</Text>
       </TouchableOpacity>
 
