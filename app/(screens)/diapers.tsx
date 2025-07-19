@@ -29,43 +29,28 @@ export default function DiaperLogScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <IconSymbol name="arrow.left" size={22} color="#687076" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Diaper Log</Text>
-        <View style={{ width: 22 }} /> {/* For spacing to balance back button */}
-      </View>
-
-      {/* Diaper Type */}
+      <View style={styles.header}><TouchableOpacity onPress={() => router.back()}><IconSymbol name="chevron.backward" size={22} color="#687076" /></TouchableOpacity><Text style={styles.headerTitle}>Diaper Log</Text><View style={{ width: 22 }} /></View>
       <Text style={styles.label}>Diaper Type</Text>
-      <View style={styles.row}>
-        {['Pee', 'Poop', 'Both'].map(t => (
-          <TouchableOpacity
-            key={t}
-            style={[styles.selectBtn, type === t && styles.selectBtnActive]}
-            onPress={() => setType(t)}
-          >
-            <IconSymbol
-              name={
-                t === 'Pee'
-                  ? 'drop.fill'
-                  : t === 'Poop'
-                  ? 'leaf.fill'
-                  : 'circle'
-              }
-              size={18}
-              color={type === t ? '#fff' : '#687076'}
-            />
-            <Text style={[styles.selectBtnText, type === t && styles.selectBtnTextActive]}>
-              {t}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Time */}
+      <View style={styles.row}>{['Pee', 'Poop', 'Both'].map(t => (
+        <TouchableOpacity
+          key={t}
+          style={[styles.selectBtn, type === t && styles.selectBtnActive]}
+          onPress={() => setType(t)}
+        >
+          <IconSymbol
+            name={
+              t === 'Pee'
+                ? 'drop.fill'
+                : t === 'Poop'
+                ? 'leaf.fill'
+                : 'circle'
+            }
+            size={18}
+            color={type === t ? '#fff' : '#687076'}
+          />
+          <Text style={[styles.selectBtnText, type === t && styles.selectBtnTextActive]}>{t}</Text>
+        </TouchableOpacity>
+      ))}</View>
       <Text style={styles.label}>Time</Text>
       <View style={styles.timeRow}>
         <TextInput style={styles.timeInput} value={time} onChangeText={setTime} />
@@ -73,40 +58,26 @@ export default function DiaperLogScreen() {
         <TextInput style={styles.dateInput} value={date} onChangeText={setDate} />
         <IconSymbol name="calendar" size={18} color="#687076" />
       </View>
-
-      {/* Consistency */}
       <Text style={styles.label}>Consistency (Poop)</Text>
-      <View style={styles.gridRow}>
-        {['Soft', 'Firm', 'Loose', 'Watery'].map(c => (
-          <TouchableOpacity
-            key={c}
-            style={[styles.gridBtn, consistency === c && styles.gridBtnActive]}
-            onPress={() => setConsistency(c)}
-          >
-            <Text style={[styles.gridBtnText, consistency === c && styles.gridBtnTextActive]}>
-              {c}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Color */}
+      <View style={styles.gridRow}>{['Soft', 'Firm', 'Loose', 'Watery'].map(c => (
+        <TouchableOpacity
+          key={c}
+          style={[styles.gridBtn, consistency === c && styles.gridBtnActive]}
+          onPress={() => setConsistency(c)}
+        >
+          <Text style={[styles.gridBtnText, consistency === c && styles.gridBtnTextActive]}>{c}</Text>
+        </TouchableOpacity>
+      ))}</View>
       <Text style={styles.label}>Color (Poop)</Text>
-      <View style={styles.gridRow}>
-        {['Yellow', 'Brown', 'Green'].map(col => (
-          <TouchableOpacity
-            key={col}
-            style={[styles.gridBtn, color === col && styles.gridBtnActive]}
-            onPress={() => setColor(col)}
-          >
-            <Text style={[styles.gridBtnText, color === col && styles.gridBtnTextActive]}>
-              {col}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Notes */}
+      <View style={styles.gridRow}>{['Yellow', 'Brown', 'Green'].map(col => (
+        <TouchableOpacity
+          key={col}
+          style={[styles.gridBtn, color === col && styles.gridBtnActive]}
+          onPress={() => setColor(col)}
+        >
+          <Text style={[styles.gridBtnText, color === col && styles.gridBtnTextActive]}>{col}</Text>
+        </TouchableOpacity>
+      ))}</View>
       <Text style={styles.label}>Notes (Optional)</Text>
       <TextInput
         style={styles.notesInput}
@@ -115,8 +86,6 @@ export default function DiaperLogScreen() {
         placeholder="Add any notes about this diaper change..."
         multiline
       />
-
-      {/* Save Button */}
       <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
         <Text style={styles.saveBtnText}>Save</Text>
       </TouchableOpacity>

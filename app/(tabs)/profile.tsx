@@ -64,7 +64,6 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
       </View>
-      
       {/* Support */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Support</Text>
