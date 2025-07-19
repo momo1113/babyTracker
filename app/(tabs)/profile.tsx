@@ -12,14 +12,17 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>Baby Information</Text>
-          <TouchableOpacity>
-            <Text style={styles.editText} onPress={() => router.push('/(screens)/edit-baby')}>✎ Edit</Text>
+          <TouchableOpacity
+            accessibilityLabel="Edit baby information"
+            onPress={() => router.push('/(screens)/edit-baby')}
+          >
+            <Text style={styles.editText}>✎ Edit</Text>
           </TouchableOpacity>
         </View>
         <View style={styles.profileRow}>
           <Image
-          source={{ uri: 'https://randomuser.me/api/portraits/med/baby/1.jpg' }}
-          style={styles.avatar}
+            source={{ uri: 'https://randomuser.me/api/portraits/med/baby/1.jpg' }}
+            style={styles.avatar}
           />
           <View style={{ flex: 1 }}>
             <Text style={styles.name}>Emma</Text>
@@ -52,37 +55,15 @@ export default function ProfileScreen() {
           <Text style={styles.growthValue}>24.5 in</Text>
         </View>
         <View style={styles.growthBtnRow}>
-          <TouchableOpacity style={styles.growthBtnOutline} onPress={() => router.push('/(screens)/GrowthChartScreen')}>
+          <TouchableOpacity
+            style={styles.growthBtnOutline}
+            onPress={() => router.push('/(screens)/GrowthChartScreen')}
+            accessibilityLabel="View growth chart"
+          >
             <Text style={styles.growthBtnOutlineText}>📊 View Growth Chart</Text>
           </TouchableOpacity>
         </View>
       </View>
-      {/* Caregiver Information */}
-      {/* <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Caregiver Information</Text>
-        <View style={styles.profileRow}>
-          <Image
-            source={{ uri: 'https://randomuser.me/api/portraits/med/baby/1.jpg' }}
-            style={styles.avatar}
-          />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.name}>Sarah Johnson</Text>
-            <Text style={styles.subText}>Primary Caregiver</Text>
-          </View>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Email</Text>
-          <Text style={styles.infoValue}>sarah.johnson@email.com</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Member Since</Text>
-          <Text style={styles.infoValue}>January 2025</Text>
-        </View>
-        <TouchableOpacity style={styles.editProfileBtn}>
-          <IconSymbol name="person.crop.circle" size={18} color="#687076" />
-          <Text style={styles.editProfileBtnText}>Edit Profile</Text>
-        </TouchableOpacity>
-      </View> */}
 
       {/* App Settings */}
       <View style={styles.section}>
@@ -101,8 +82,11 @@ export default function ProfileScreen() {
       </View>
 
       {/* Logout */}
-      <TouchableOpacity style={styles.logoutBtn}>
-        <IconSymbol name="arrow.right.square" size={20} color="#687076" />
+      <TouchableOpacity
+        style={styles.logoutBtn}
+        accessibilityLabel="Logout"
+      >
+        <IconSymbol name="arrow-right-square" size={20} color="#687076" />
         <Text style={styles.logoutBtnText}>Logout</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -111,41 +95,40 @@ export default function ProfileScreen() {
 
 function ProfileItem({ icon, label }: { icon: string; label: string }) {
   return (
-    <TouchableOpacity style={styles.profileItem}>
+    <TouchableOpacity
+      style={styles.profileItem}
+      accessibilityLabel={`Navigate to ${label}`}
+    >
       <IconSymbol name={icon} size={18} color="#687076" />
       <Text style={styles.profileItemText}>{label}</Text>
-      <IconSymbol name="chevron.right" size={18} color="#D1D5DB" />
+      <IconSymbol name="chevron-right" size={18} color="#7A867B" />
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 0, backgroundColor: '#fff', paddingTop: 72, paddingBottom: 56  },
-  section: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 16, marginHorizontal: 0, borderBottomWidth: 8, borderBottomColor: '#F7F8F9' },
+  container: { padding: 0, backgroundColor: '#F6F7F4', paddingTop: 72, paddingBottom: 56 },
+  section: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 16, marginHorizontal: 0, borderBottomWidth: 8, borderBottomColor: '#E9F2EC' },
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  sectionTitle: { fontSize: 15, fontWeight: 'bold', color: '#11181C' },
-  editText: { color: '#687076', fontSize: 14 },
+  sectionTitle: { fontSize: 15, fontWeight: 'bold', color: '#2D3A2E' },
+  editText: { color: '#7A867B', fontSize: 14 },
   profileRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  avatar: { width: 48, height: 48, borderRadius: 24, marginRight: 12, backgroundColor: '#ECEDEE' },
-  name: { fontSize: 16, fontWeight: 'bold', color: '#11181C' },
-  subText: { fontSize: 13, color: '#687076', marginTop: 2 },
+  avatar: { width: 48, height: 48, borderRadius: 24, marginRight: 12, backgroundColor: '#C5D7BD' },
+  name: { fontSize: 16, fontWeight: 'bold', color: '#2D3A2E' },
+  subText: { fontSize: 13, color: '#7A867B', marginTop: 2 },
   infoRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  infoLabel: { color: '#687076', fontSize: 14 },
-  infoValue: { color: '#11181C', fontSize: 14, fontWeight: '500' },
-  editProfileBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F7F8F9', borderRadius: 8, paddingVertical: 10, justifyContent: 'center', marginTop: 12 },
-  editProfileBtnText: { color: '#687076', fontSize: 15, fontWeight: 'bold', marginLeft: 6 },
-  profileItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F1F1F1', paddingHorizontal: 4 },
-  profileItemText: { flex: 1, marginLeft: 12, fontSize: 15, color: '#11181C' },
-  logoutBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F7F8F9', borderRadius: 8, paddingVertical: 16, justifyContent: 'center', margin: 16, marginBottom: 32 },
-  logoutBtnText: { color: '#687076', fontSize: 16, fontWeight: 'bold', marginLeft: 8 },
-  growthSection: { backgroundColor: '#F7F8F9', borderRadius: 10, padding: 12, marginTop: 16 },
-  growthTitle: { fontSize: 15, fontWeight: 'bold', color: '#11181C', marginBottom: 8 },
+  infoLabel: { color: '#7A867B', fontSize: 14 },
+  infoValue: { color: '#2D3A2E', fontSize: 14, fontWeight: '500' },
+  profileItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#E9F2EC', paddingHorizontal: 4 },
+  profileItemText: { flex: 1, marginLeft: 12, fontSize: 15, color: '#2D3A2E' },
+  logoutBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E9F2EC', borderRadius: 8, paddingVertical: 16, justifyContent: 'center', margin: 16, marginBottom: 32 },
+  logoutBtnText: { color: '#2D3A2E', fontSize: 16, fontWeight: 'bold', marginLeft: 8 },
+  growthSection: { backgroundColor: '#E9F2EC', borderRadius: 10, padding: 12, marginTop: 16 },
+  growthTitle: { fontSize: 15, fontWeight: 'bold', color: '#2D3A2E', marginBottom: 8 },
   growthRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  growthLabel: { color: '#687076', fontSize: 14 },
-  growthValue: { color: '#11181C', fontSize: 14, fontWeight: '500' },
+  growthLabel: { color: '#7A867B', fontSize: 14 },
+  growthValue: { color: '#2D3A2E', fontSize: 14, fontWeight: '500' },
   growthBtnRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
-  growthBtn: { flex: 1, backgroundColor: '#11181C', borderRadius: 8, paddingVertical: 10, alignItems: 'center', marginRight: 4 },
-  growthBtnText: { color: '#fff', fontSize: 14, fontWeight: 'bold' },
-  growthBtnOutline: { flex: 1, borderWidth: 1, borderColor: '#11181C', borderRadius: 8, paddingVertical: 10, alignItems: 'center', marginLeft: 4 },
-  growthBtnOutlineText: { color: '#11181C', fontSize: 14, fontWeight: 'bold' }
+  growthBtnOutline: { flex: 1, borderWidth: 1, borderColor: '#2D3A2E', borderRadius: 8, paddingVertical: 10, alignItems: 'center', marginLeft: 4 },
+  growthBtnOutlineText: { color: '#2D3A2E', fontSize: 14, fontWeight: 'bold' },
 });
