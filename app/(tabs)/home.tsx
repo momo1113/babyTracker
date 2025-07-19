@@ -1,9 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import Modal from 'react-native-modal';
-import { Calendar } from 'react-native-calendars';
 
 const timelineData = [
   {
@@ -47,31 +44,9 @@ const timelineData = [
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [isModalVisible, setModalVisible] = useState(false);
-  const [selectedDate, setSelectedDate] = useState('2025-07-18'); // Default to today
 
-  const toggleModal = () => {
-    setModalVisible(!isModalVisible);
-  };
-
-  const handleDateSelect = (day) => {
-    setSelectedDate(day.dateString);
-    console.log('Selected date:', day.dateString);
-    toggleModal();
-  };
-
-  // Filter timelineData based on selectedDate
-  const filteredTimeline = timelineData.filter((item) => item.date === selectedDate);
-
-  // Format date for display (e.g., "July 18, 2025")
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
+  // Filter timelineData for today (2025-07-18)
+  const filteredTimeline = timelineData.filter((item) => item.date === '2025-07-18');
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -90,9 +65,9 @@ export default function HomeScreen() {
 
       {/* Quick Actions */}
       <View style={styles.quickActions}>
-        <QuickAction icon="drop.fill" label="Feeding" onPress={() => router.push('/(screens)/feeding')}/>
-        <QuickAction icon="bandage.fill" label="Diaper" onPress={() => router.push('/(screens)/diapers')}/>
-        <QuickAction icon="moon.fill" label="Sleeping" onPress={() => router.push('/(screens)/sleeping')}/>
+        <QuickAction icon="drop.fill" label="Feeding" onPress={() => router.push('/(screens)/feeding')} />
+        <QuickAction icon="bandage.fill" label="Diaper" onPress={() => router.push('/(screens)/diapers')} />
+        <QuickAction icon="moon.fill" label="Sleeping" onPress={() => router.push('/(screens)/sleeping')} />
       </View>
 
       {/* Suggestions */}
@@ -104,15 +79,9 @@ export default function HomeScreen() {
 
       {/* Timeline */}
       <View style={styles.section}>
-        <View style={styles.timelineHeader}>
-          <Text style={styles.sectionTitle}>
-            Timeline for {formatDate(selectedDate)}
-          </Text>
-          <TouchableOpacity style={styles.calendarBtn} onPress={toggleModal}>
-            <Text style={styles.calendarText}>View Calendar</Text>
-            <IconSymbol name="calendar" size={16} color="#687076" />
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.sectionTitle} accessibilityLabel="Timeline for Today">
+          Timeline for Today
+        </Text>
         {filteredTimeline.length > 0 ? (
           filteredTimeline.map((item, index) => (
             <TimelineItem
@@ -123,36 +92,9 @@ export default function HomeScreen() {
             />
           ))
         ) : (
-          <Text style={styles.noEventsText}>No events for this date</Text>
+          <Text style={styles.noEventsText}>No events for today</Text>
         )}
       </View>
-
-      {/* Calendar Modal */}
-      <Modal
-        isVisible={isModalVisible}
-        onBackdropPress={toggleModal}
-        style={styles.modal}
-      >
-        <View style={styles.modalContent}>
-          <Calendar
-            onDayPress={handleDateSelect}
-            markedDates={{
-              [selectedDate]: { selected: true, selectedColor: '#8FB89C' },
-            }}
-            theme={{
-              selectedDayBackgroundColor: '#8FB89C',
-              todayTextColor: '#2D3A2E',
-              arrowColor: '#687076',
-              monthTextColor: '#2D3A2E',
-              textDayFontWeight: '400',
-              textMonthFontWeight: 'bold',
-            }}
-          />
-          <TouchableOpacity style={styles.closeButton} onPress={toggleModal}>
-            <Text style={styles.closeButtonText}>Close</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
     </ScrollView>
   );
 }
@@ -168,7 +110,11 @@ function QuickAction({
   onPress?: () => void;
 }) {
   return (
-    <TouchableOpacity style={styles.quickAction} onPress={onPress}>
+    <TouchableOpacity
+      style={styles.quickAction}
+      onPress={onPress}
+      accessibilityLabel={`Navigate to ${label} screen`}
+    >
       <IconSymbol name={icon} size={32} color="#687076" />
       <Text style={styles.quickActionLabel}>{label}</Text>
     </TouchableOpacity>
@@ -256,14 +202,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   suggestionText: { marginLeft: 8, color: '#7A867B', fontSize: 14 },
-  timelineHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  calendarBtn: { flexDirection: 'row', alignItems: 'center' },
-  calendarText: { marginRight: 4, color: '#7A867B', fontSize: 13 },
   timelineItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -309,26 +247,4 @@ const styles = StyleSheet.create({
   timelineTime: { fontSize: 12, color: '#7A867B' },
   timelineDetail: { fontSize: 13, color: '#2D3A2E', marginTop: 2 },
   noEventsText: { fontSize: 14, color: '#7A867B', textAlign: 'center' },
-  modal: {
-    justifyContent: 'center',
-    margin: 0,
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    marginHorizontal: 20,
-    alignItems: 'center',
-  },
-  closeButton: {
-    marginTop: 16,
-    padding: 10,
-    backgroundColor: '#E9F2EC',
-    borderRadius: 8,
-  },
-  closeButtonText: {
-    color: '#2D3A2E',
-    fontSize: 16,
-    fontWeight: '500',
-  },
 });

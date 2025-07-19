@@ -3,112 +3,58 @@ import { View, Text, Pressable, ScrollView, StyleSheet, Dimensions } from 'react
 import { LineChart, BarChart, PieChart } from 'react-native-chart-kit';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import Modal from 'react-native-modal';
-import { Calendar } from 'react-native-calendars';
 import { useRouter } from 'expo-router';
 
 export default function InsightsScreen() {
   const router = useRouter();
   const [isDropdownVisible, setDropdownVisible] = useState(false);
-  const [isCustomRangeVisible, setCustomRangeVisible] = useState(false);
   const [rangeType, setRangeType] = useState('7days'); // Default: Last 7 days
-  const [customStartDate, setCustomStartDate] = useState(null);
-  const [customEndDate, setCustomEndDate] = useState('2025-07-18'); // Default to today
-  const [tempStartDate, setTempStartDate] = useState(null);
-  const [tempEndDate, setTempEndDate] = useState('2025-07-18');
 
   const toggleDropdown = () => {
     setDropdownVisible(!isDropdownVisible);
   };
 
-  const toggleCustomRange = () => {
-    setTempStartDate(customStartDate);
-    setTempEndDate(customEndDate);
-    setCustomRangeVisible(!isCustomRangeVisible);
-    setDropdownVisible(false);
-  };
-
   const handleRangeSelect = (type) => {
     setRangeType(type);
-    setCustomStartDate(null);
-    setCustomEndDate('2025-07-18');
     toggleDropdown();
   };
 
-  const handleCustomDateSelect = (day) => {
-    if (!tempStartDate || (tempStartDate && tempEndDate)) {
-      setTempStartDate(day.dateString);
-      setTempEndDate(null);
-    } else if (tempStartDate && !tempEndDate && day.dateString >= tempStartDate) {
-      setTempEndDate(day.dateString);
-    }
-  };
-
-  const confirmCustomRange = () => {
-    if (tempStartDate && tempEndDate) {
-      setCustomStartDate(tempStartDate);
-      setCustomEndDate(tempEndDate);
-      setRangeType('custom');
-      setCustomRangeVisible(false);
-    }
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
-
   const getRangeLabel = () => {
-    if (rangeType === 'custom') {
-      return `${formatDate(customStartDate)} - ${formatDate(customEndDate)}`;
-    }
     return `Last ${rangeType === '7days' ? '7' : rangeType === '14days' ? '14' : '30'} days`;
+  };
+
+  // Helper to generate date labels (e.g., ["7/12", "7/13", ..., "7/18"] for 7 days)
+  const generateDateLabels = (days) => {
+    const labels = [];
+    const today = new Date('2025-07-18');
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      labels.push(`${date.getMonth() + 1}/${date.getDate()}`);
+    }
+    return labels;
   };
 
   // Mock chart data based on range
   const getChartData = () => {
-    const labels7 = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const labels14 = ['7/5', '7/6', '7/7', '7/8', '7/9', '7/10', '7/11', '7/12', '7/13', '7/14', '7/15', '7/16', '7/17', '7/18'];
-    const labels30 = ['6/19', '6/24', '6/29', '7/4', '7/9', '7/14', '7/18'];
+    const days = rangeType === '7days' ? 7 : rangeType === '14days' ? 14 : 30;
+    const labels = generateDateLabels(days);
 
-    const sleepData = {
-      '7days': { labels: labels7, data: [13.5, 14, 12.5, 14.2, 13.8, 15, 14.5] },
-      '14days': { labels: labels14, data: [13, 14, 12, 14.5, 13.5, 14, 12.5, 14.2, 13.8, 15, 14, 13.5, 14, 14.5] },
-      '30days': { labels: labels30, data: [13, 13.5, 14, 14.5, 13.8, 14.2, 14.5] },
-      'custom': { labels: labels7, data: [13.5, 14, 12.5, 14.2, 13.8, 15, 14.5] }, // Placeholder for custom
+    // Generate mock sleep data (hours)
+    const sleepData = Array(days).fill(0).map(() => 12 + Math.random() * 3); // Random 12-15h
+    // Generate mock feeding data (count)
+    const feedingData = Array(days).fill(0).map(() => Math.floor(6 + Math.random() * 4)); // Random 6-9
+    // Generate mock diaper data
+    const diaperData = [
+      { name: 'Pee', count: Math.floor(days * 0.7), color: '#8FB89C', legendFontColor: '#7A867B', legendFontSize: 14 },
+      { name: 'Poop', count: Math.floor(days * 0.4), color: '#C5D7BD', legendFontColor: '#7A867B', legendFontSize: 14 },
+    ];
+
+    return {
+      sleep: { labels, data: sleepData },
+      feeding: { labels, data: feedingData },
+      diaper: diaperData,
     };
-
-    const feedingData = {
-      '7days': { labels: labels7, data: [7, 8, 9, 8, 7, 6, 8] },
-      '14days': { labels: labels14, data: [7, 8, 9, 8, 7, 6, 8, 7, 8, 9, 8, 7, 6, 8] },
-      '30days': { labels: labels30, data: [8, 7, 9, 8, 7, 8, 8] },
-      'custom': { labels: labels7, data: [7, 8, 9, 8, 7, 6, 8] }, // Placeholder for custom
-    };
-
-    const diaperData = {
-      '7days': [
-        { name: 'Pee', count: 5, color: '#8FB89C', legendFontColor: '#7A867B', legendFontSize: 14 },
-        { name: 'Poop', count: 3, color: '#C5D7BD', legendFontColor: '#7A867B', legendFontSize: 14 },
-      ],
-      '14days': [
-        { name: 'Pee', count: 10, color: '#8FB89C', legendFontColor: '#7A867B', legendFontSize: 14 },
-        { name: 'Poop', count: 6, color: '#C5D7BD', legendFontColor: '#7A867B', legendFontSize: 14 },
-      ],
-      '30days': [
-        { name: 'Pee', count: 22, color: '#8FB89C', legendFontColor: '#7A867B', legendFontSize: 14 },
-        { name: 'Poop', count: 14, color: '#C5D7BD', legendFontColor: '#7A867B', legendFontSize: 14 },
-      ],
-      'custom': [
-        { name: 'Pee', count: 5, color: '#8FB89C', legendFontColor: '#7A867B', legendFontSize: 14 },
-        { name: 'Poop', count: 3, color: '#C5D7BD', legendFontColor: '#7A867B', legendFontSize: 14 },
-      ],
-    };
-
-    return { sleep: sleepData[rangeType], feeding: feedingData[rangeType], diaper: diaperData[rangeType] };
   };
 
   const chartData = getChartData();
@@ -122,9 +68,12 @@ export default function InsightsScreen() {
     style: { borderRadius: 12 },
     propsForDots: { r: '5', strokeWidth: '2', stroke: '#2D3A2E' },
     propsForBackgroundLines: { stroke: '#C5D7BD' },
-    propsForLabels: { fontSize: 12, fontWeight: '500' },
-    barPercentage: 0.8,
+    propsForLabels: { fontSize: 12, fontWeight: '500', paddingRight: 10 },
+    barPercentage: 0.7,
   };
+
+  // Calculate chart width based on range (wider for more days)
+  const chartWidth = rangeType === '7days' ? Dimensions.get('window').width - 60 : (rangeType === '14days' ? Dimensions.get('window').width * 1.6 : Dimensions.get('window').width * 2.2);
 
   return (
     <View style={styles.containerWrapper}>
@@ -145,20 +94,23 @@ export default function InsightsScreen() {
             <IconSymbol name="bed-outline" size={20} color="#687076" /> Sleep Trends
           </Text>
           <View style={styles.card}>
-            <View style={styles.chartContainer}>
+            <ScrollView horizontal={true} showsHorizontalScrollIndicator={true} style={styles.chartScroll}>
               <LineChart
                 data={{
                   labels: chartData.sleep.labels,
                   datasets: [{ data: chartData.sleep.data }],
                 }}
-                width={Dimensions.get('window').width - 80}
+                width={chartWidth}
                 height={220}
                 yAxisSuffix="h"
                 chartConfig={chartConfig}
                 bezier
                 style={styles.chart}
+                horizontalScroll={true}
+                verticalScroll={true}
+                accessibilityLabel={`Sleep trends for ${getRangeLabel()}`}
               />
-            </View>
+            </ScrollView>
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
                 <Text style={styles.statValue}>2.5h</Text>
@@ -187,20 +139,23 @@ export default function InsightsScreen() {
             <IconSymbol name="baby-bottle-outline" size={20} color="#687076" /> Feeding Frequency
           </Text>
           <View style={styles.card}>
-            <View style={styles.chartContainer}>
+            <ScrollView horizontal={true} showsHorizontalScrollIndicator={true} style={styles.chartScroll}>
               <BarChart
                 data={{
                   labels: chartData.feeding.labels,
                   datasets: [{ data: chartData.feeding.data }],
                 }}
-                width={Dimensions.get('window').width - 80}
+                width={chartWidth + 20}
                 height={220}
                 yAxisSuffix=""
                 fromZero
                 chartConfig={{ ...chartConfig, decimalPlaces: 0 }}
                 style={styles.chart}
+                horizontalScroll={true}
+                verticalScroll={true}
+                accessibilityLabel={`Feeding frequency for ${getRangeLabel()}, ${chartData.feeding.data.length} days shown`}
               />
-            </View>
+            </ScrollView>
             <View style={styles.statsRowCentered}>
               <View style={styles.statItem}>
                 <Text style={styles.statValue}>8</Text>
@@ -227,7 +182,7 @@ export default function InsightsScreen() {
             <View style={styles.chartContainer}>
               <PieChart
                 data={chartData.diaper}
-                width={Dimensions.get('window').width - 80}
+                width={Dimensions.get('window').width - 60}
                 height={200}
                 chartConfig={chartConfig}
                 accessor="count"
@@ -235,6 +190,7 @@ export default function InsightsScreen() {
                 paddingLeft="30"
                 absolute
                 style={styles.chart}
+                accessibilityLabel={`Diaper analysis for ${getRangeLabel()}`}
               />
             </View>
             <View style={styles.statsRow}>
@@ -291,15 +247,6 @@ export default function InsightsScreen() {
             <Text style={styles.actionBtnText}>New Tips</Text>
           </Pressable>
         </View>
-        <View style={styles.actionRow}>
-          <Pressable
-            onPress={() => console.log('Export PDF')}
-            style={({ pressed }) => [styles.actionBtn, pressed && styles.pressed]}
-            accessibilityLabel="Export insights as PDF"
-          >
-            <Text style={styles.actionBtnText}>Export PDF</Text>
-          </Pressable>
-        </View>
       </ScrollView>
 
       {/* Dropdown Modal */}
@@ -310,69 +257,18 @@ export default function InsightsScreen() {
       >
         <View style={styles.dropdownContent}>
           <Text style={styles.modalTitle}>Select Range</Text>
-          {['7days', '14days', '30days', 'custom'].map((type) => (
+          {['7days', '14days', '30days'].map((type) => (
             <Pressable
               key={type}
-              onPress={() => (type === 'custom' ? toggleCustomRange() : handleRangeSelect(type))}
+              onPress={() => handleRangeSelect(type)}
               style={({ pressed }) => [styles.dropdownItem, pressed && styles.pressed]}
-              accessibilityLabel={`Select ${type === 'custom' ? 'custom range' : `last ${type.replace('days', '')} days`}`}
+              accessibilityLabel={`Select last ${type.replace('days', '')} days`}
             >
               <Text style={styles.dropdownItemText}>
-                {type === 'custom' ? 'Custom Range' : `Last ${type.replace('days', '')} days`}
+                Last ${type.replace('days', '')} days
               </Text>
             </Pressable>
           ))}
-        </View>
-      </Modal>
-
-      {/* Custom Range Modal */}
-      <Modal
-        isVisible={isCustomRangeVisible}
-        onBackdropPress={toggleCustomRange}
-        style={styles.modal}
-      >
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Select Custom Range</Text>
-          <Text style={styles.modalPreview}>
-            {tempStartDate ? `${formatDate(tempStartDate)} - ${tempEndDate ? formatDate(tempEndDate) : 'Select end date'}` : 'Select start date'}
-          </Text>
-          <Calendar
-            onDayPress={handleCustomDateSelect}
-            markedDates={{
-              [tempStartDate]: { selected: true, selectedColor: '#8FB89C' },
-              [tempEndDate]: { selected: true, selectedColor: '#8FB89C' },
-            }}
-            theme={{
-              selectedDayBackgroundColor: '#8FB89C',
-              todayTextColor: '#2D3A2E',
-              arrowColor: '#687076',
-              monthTextColor: '#2D3A2E',
-              textDayFontWeight: '400',
-              textMonthFontWeight: 'bold',
-            }}
-          />
-          <View style={styles.modalButtons}>
-            <Pressable
-              onPress={toggleCustomRange}
-              style={({ pressed }) => [styles.modalButton, pressed && styles.pressed]}
-              accessibilityLabel="Cancel custom range"
-            >
-              <Text style={styles.modalButtonText}>Cancel</Text>
-            </Pressable>
-            <Pressable
-              onPress={confirmCustomRange}
-              style={({ pressed }) => [
-                styles.modalButton,
-                styles.selectButton,
-                tempStartDate && tempEndDate ? {} : styles.disabledButton,
-                pressed && styles.pressed,
-              ]}
-              disabled={!tempStartDate || !tempEndDate}
-              accessibilityLabel="Confirm custom range"
-            >
-              <Text style={styles.modalButtonText}>Select</Text>
-            </Pressable>
-          </View>
         </View>
       </Modal>
     </View>
@@ -420,6 +316,10 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
+  chartScroll: {
+    marginBottom: 16,
+    paddingHorizontal: 10,
+  },
   chartContainer: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -436,19 +336,33 @@ const styles = StyleSheet.create({
   },
   statsRowCentered: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'space-around',
     marginVertical: 12,
     flexWrap: 'wrap',
   },
   statItem: {
-    flex: 1,
+    width: 100,
     alignItems: 'center',
     marginHorizontal: 8,
-    minWidth: 80,
   },
-  statValue: { fontSize: 18, fontWeight: 'bold', color: '#2D3A2E' },
-  statLabel: { fontSize: 14, color: '#7A867B', marginTop: 4 },
-  statSubLabel: { fontSize: 12, color: '#7A867B', marginTop: 2 },
+  statValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2D3A2E',
+    textAlign: 'center',
+  },
+  statLabel: {
+    fontSize: 14,
+    color: '#7A867B',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  statSubLabel: {
+    fontSize: 12,
+    color: '#7A867B',
+    marginTop: 2,
+    textAlign: 'center',
+  },
   infoBox: {
     backgroundColor: '#E9F2EC',
     borderRadius: 8,
@@ -485,32 +399,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 24,
     alignItems: 'center',
   },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 24,
-    marginHorizontal: 24,
-    alignItems: 'center',
-  },
   modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#2D3A2E', marginBottom: 12 },
-  modalPreview: { fontSize: 16, color: '#7A867B', marginBottom: 16 },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginTop: 16,
-  },
-  modalButton: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: '#E9F2EC',
-    alignItems: 'center',
-    marginHorizontal: 8,
-  },
-  selectButton: { backgroundColor: '#8FB89C' },
-  disabledButton: { backgroundColor: '#C5D7BD', opacity: 0.5 },
-  modalButtonText: { fontSize: 16, fontWeight: '600', color: '#2D3A2E' },
   dropdownItem: {
     padding: 12,
     borderRadius: 8,
