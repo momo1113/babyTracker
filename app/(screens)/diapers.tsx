@@ -12,20 +12,37 @@ export default function DiaperLogScreen() {
   const [color, setColor] = useState('');
   const [notes, setNotes] = useState('');
 
-  const handleSave = async () => {
-    const payload = {
-      type,
-      time,
-      date,
-      consistency: type !== 'Pee' ? consistency : null,
-      color: type !== 'Pee' ? color : null,
-      notes,
-      timestamp: new Date().toISOString(),
-    };
-
-    console.log('Mock saving:', payload); // Replace with real API call
-    router.back();
+const handleSave = async () => {
+  const payload = {
+    type,
+    time,
+    date,
+    consistency: type !== 'Pee' ? consistency : null,
+    color: type !== 'Pee' ? color : null,
+    notes,
+    timestamp: new Date().toISOString(),
   };
+
+  try {
+    const response = await fetch('http://localhost:3000/diaper', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to save diaper log');
+    }
+
+    const data = await response.json();
+    console.log('Diaper log saved:', data);
+
+    router.back();
+  } catch (error) {
+    console.error('Error saving diaper log:', error);
+    // Optionally: alert the user
+  }
+};
 
   return (
     <ScrollView contentContainerStyle={styles.container}>

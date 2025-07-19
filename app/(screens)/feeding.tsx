@@ -14,20 +14,42 @@ export default function FeedingLogScreen() {
   const [notes, setNotes] = useState('');
   const router = useRouter();
 
-  const handleSave = async () => {
-    const payload = {
-      feedingType,
-      side: feedingType === 'Breast' ? side : null,
-      amount: feedingType !== 'Breast' ? amount : null,
-      unit: feedingType !== 'Breast' ? unit : null,
-      duration,
-      notes,
-      timestamp: new Date().toISOString(),
-    };
-
-    console.log('Mock Save:', payload);
-    router.back();
+const handleSave = async () => {
+  const payload = {
+    feedingType,
+    side: feedingType === 'Breast' ? side : null,
+    amount: feedingType !== 'Breast' ? amount : null,
+    unit: feedingType !== 'Breast' ? unit : null,
+    duration,
+    notes,
+    timestamp: new Date().toISOString(),
   };
+
+  try {
+    // Use your backend server address here
+    const response = await fetch('http://localhost:3000/feeding/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to save feeding log');
+    }
+
+    const data = await response.json();
+    console.log('Feeding log saved:', data);
+
+    // Navigate back or show success message
+    router.back();
+  } catch (error) {
+    console.error('Error saving feeding log:', error);
+    // Show alert or user feedback if needed
+  }
+};
+
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
