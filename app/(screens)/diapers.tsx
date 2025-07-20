@@ -31,8 +31,6 @@ export default function DiaperLogScreen() {
     payload.color = color;
   }
 
-  console.log('Saving payload:', payload);
-
   try {
     const response = await fetch('http://localhost:3000/diaper', {
       method: 'POST',
