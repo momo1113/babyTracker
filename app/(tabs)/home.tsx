@@ -169,14 +169,29 @@ function TimelineItem({
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 24, paddingTop: 64, backgroundColor: '#F6F7F4' },
-  profileSection: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  avatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#C5D7BD', marginRight: 12 },
+  container: {
+    padding: 24,
+    paddingTop: 64,
+    backgroundColor: '#F9F9F7', // Warm White
+  },
+  profileSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#E1D3C1', // Soft Sand
+    marginRight: 12,
+  },
   profileInfo: { flex: 1 },
   profileName: { fontSize: 16, fontWeight: 'bold', color: '#2D3A2E' },
   profileAge: { fontSize: 14, color: '#7A867B' },
   lastSeen: { flexDirection: 'row', alignItems: 'center' },
   lastSeenText: { marginLeft: 4, fontSize: 12, color: '#7A867B' },
+
   quickActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -187,21 +202,37 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 4,
     padding: 12,
-    backgroundColor: '#E9F2EC',
+    backgroundColor: '#F5EDE1', // Beige Cream
     borderRadius: 12,
   },
-  quickActionLabel: { marginTop: 8, fontSize: 15, color: '#2D3A2E' },
+  quickActionLabel: {
+    marginTop: 8,
+    fontSize: 15,
+    color: '#2D3A2E',
+  },
+
   section: { marginBottom: 16 },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 8, color: '#2D3A2E' },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#2D3A2E',
+  },
+
   suggestion: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E9F2EC',
+    backgroundColor: '#F5EDE1', // Beige Cream
     borderRadius: 8,
     padding: 10,
     marginBottom: 8,
   },
-  suggestionText: { marginLeft: 8, color: '#7A867B', fontSize: 14 },
+  suggestionText: {
+    marginLeft: 8,
+    color: '#7A867B',
+    fontSize: 14,
+  },
+
   timelineItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -211,13 +242,13 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#8FB89C',
+    backgroundColor: '#D4C5B3', // Warm Taupe
     marginRight: 12,
     marginTop: 6,
   },
   timelineContent: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF', // Card stays white for contrast
     borderRadius: 8,
     padding: 12,
     shadowColor: '#000',
@@ -238,13 +269,24 @@ const styles = StyleSheet.create({
   timelineType: {
     fontSize: 13,
     fontWeight: 'bold',
-    backgroundColor: '#C5D7BD',
+    backgroundColor: '#E8E8E8', // Light Dove Grey
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
     color: '#2D3A2E',
   },
-  timelineTime: { fontSize: 12, color: '#7A867B' },
-  timelineDetail: { fontSize: 13, color: '#2D3A2E', marginTop: 2 },
-  noEventsText: { fontSize: 14, color: '#7A867B', textAlign: 'center' },
+  timelineTime: {
+    fontSize: 12,
+    color: '#7A867B',
+  },
+  timelineDetail: {
+    fontSize: 13,
+    color: '#2D3A2E',
+    marginTop: 2,
+  },
+  noEventsText: {
+    fontSize: 14,
+    color: '#7A867B',
+    textAlign: 'center',
+  },
 });

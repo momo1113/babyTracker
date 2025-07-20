@@ -1,28 +1,27 @@
-// controllers/babyProfileController.js
-exports.saveBabyProfile = (req, res) => {
-  const { dob, gender, growth } = req.body;
+// This is a simple in-memory store for demo purposes
+let babyProfileData = null;
 
-  // ✅ Validate fields
-  if (!dob || typeof dob !== 'string') {
-    return res.status(400).json({ error: 'Date of birth is required and must be a string' });
-  }
+const saveBabyProfile = (req, res) => {
+  try {
+    const { dob, gender, growthData } = req.body;
 
-  if (!gender || typeof gender !== 'string') {
-    return res.status(400).json({ error: 'Gender is required and must be a string' });
-  }
-
-  if (!Array.isArray(growth)) {
-    return res.status(400).json({ error: 'Growth must be an array' });
-  }
-
-  for (const entry of growth) {
-    if (!entry.date || !entry.weight || !entry.height) {
-      return res.status(400).json({ error: 'Each growth entry must include date, weight, and height' });
+    // Basic validation
+    if (!dob || !gender || !Array.isArray(growthData)) {
+      return res.status(400).json({ error: 'Missing required fields or invalid data.' });
     }
+
+    // Additional validation could be added here (date format, gender values, growthData format)
+
+    // Save (replace with actual DB save logic)
+    babyProfileData = { dob, gender, growthData };
+
+    console.log('Saved baby profile:', babyProfileData);
+
+    return res.status(200).json({ message: 'Baby profile saved successfully', data: babyProfileData });
+  } catch (error) {
+    console.error('Error saving baby profile:', error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
-
-  // TODO: Save to database or local store
-  console.log('✅ Baby profile saved:', { dob, gender, growth });
-
-  return res.status(200).json({ message: 'Baby profile saved successfully' });
 };
+
+module.exports = { saveBabyProfile };
