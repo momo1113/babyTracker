@@ -80,10 +80,51 @@ export default function EditBabyScreen() {
     setGrowthData([...growthData, { date: '', weight: '', height: '' }]);
   };
 
-  const handleSave = () => {
-    // TODO: save to backend or local storage
+  const handleSave = async () => {
+  // Validation: make sure all growth entries have weight & height
+  for (const [i, entry] of growthData.entries()) {
+    if (!entry.weight || !entry.height) {
+      Alert.alert('Validation Error', `Please enter weight and height for growth entry ${i + 1}.`);
+      return;
+    }
+  }
+
+  // Basic DOB and Gender validation
+  if (!dob) {
+    Alert.alert('Validation Error', 'Please enter Date of Birth.');
+    return;
+  }
+  if (!gender) {
+    Alert.alert('Validation Error', 'Please select Gender.');
+    return;
+  }
+
+  const payload = { dob, gender, growthData };
+
+  const BASE_URL = 'http://192.168.1.9:3000';
+
+  try {
+    const response = await fetch(`${BASE_URL}/baby-profile`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to save baby profile.');
+    }
+
+    await response.json();
+
+    Alert.alert('Success', 'Baby profile saved successfully!');
     router.back();
-  };
+  } catch (error) {
+    console.error('❌ Error:', error);
+    Alert.alert('Error', error.message || 'Something went wrong');
+  }
+};
+
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -172,7 +213,7 @@ export default function EditBabyScreen() {
           <IconSymbol name="chevron.down" size={20} color="#687076" />
         )}
       </TouchableOpacity>
-      
+
     {isGenderDropdownOpen && (
       <View style={styles.genderDropdown}>
         {GENDERS.map(({ label }) => {
@@ -320,7 +361,7 @@ export default function EditBabyScreen() {
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    backgroundColor: '#F6F7F4',
+    backgroundColor: '#F9F9F7', // Warm White
     paddingTop: 76,
     paddingBottom: 100,
   },
@@ -335,52 +376,48 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 14,
-    color: '#2D3A2E',
+    color: '#3B322C', // Warm Taupe (darker)
     marginLeft: 4,
     fontWeight: '500',
   },
   header: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#2D3A2E',
+    color: '#3B322C', // Warm Taupe
     marginTop: 32,
     marginBottom: 16,
     textAlign: 'center',
   },
   label: {
     fontSize: 14,
-    color: '#7A867B',
+    color: '#867E76', // softer taupe shade
     marginBottom: 4,
   },
   inputWithIcon: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#C5D7BD',
+    borderColor: '#D4C5B3', // Warm Taupe
     borderRadius: 12,
     padding: 10,
     marginBottom: 16,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 1,
+    backgroundColor: '#F5EDE1', // Beige Cream
     justifyContent: 'space-between',
   },
   inputText: {
     fontSize: 15,
-    color: '#2D3A2E',
+    color: '#3B322C', // Warm Taupe
   },
   genderInput: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#C5D7BD',
+    borderColor: '#D4C5B3', // Warm Taupe
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
     marginBottom: 16,
-    backgroundColor: '#fff',
+    backgroundColor: '#F5EDE1', // Beige Cream
   },
   genderSelected: {
     flexDirection: 'row',
@@ -388,13 +425,13 @@ const styles = StyleSheet.create({
   },
   genderText: {
     fontSize: 16,
-    color: '#2D3A2E',
+    color: '#3B322C', // Warm Taupe
   },
   genderDropdown: {
-    backgroundColor: '#fff',
+    backgroundColor: '#F5EDE1', // Beige Cream
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#C5D7BD',
+    borderColor: '#D4C5B3', // Warm Taupe
     marginBottom: 16,
   },
   genderDropdownItem: {
@@ -403,16 +440,16 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#E9F2EC',
+    borderBottomColor: '#E8E8E8', // Light Dove Grey
   },
   genderDropdownText: {
     fontSize: 16,
-    color: '#2D3A2E',
+    color: '#3B322C', // Warm Taupe
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#2D3A2E',
+    color: '#3B322C', // Warm Taupe
     marginVertical: 12,
   },
   growthEntriesContainer: {
@@ -423,7 +460,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     marginBottom: 12,
-    backgroundColor: '#E9F2EC',
+    backgroundColor: '#E1D3C1', // Soft Sand
     borderRadius: 10,
     padding: 8,
   },
@@ -432,91 +469,71 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#C5D7BD',
+    borderColor: '#D4C5B3', // Warm Taupe
     borderRadius: 12,
     padding: 10,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 1,
+    backgroundColor: '#F5EDE1', // Beige Cream
   },
   dateButtonText: {
     fontSize: 13,
-    color: '#2D3A2E',
+    color: '#3B322C', // Warm Taupe
     marginLeft: 8,
   },
   growthInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#C5D7BD',
+    borderColor: '#D4C5B3', // Warm Taupe
     borderRadius: 12,
     padding: 10,
     fontSize: 13,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 1,
+    backgroundColor: '#F5EDE1', // Beige Cream
   },
   modal: {
     justifyContent: 'flex-end',
     margin: 0,
   },
   modalContent: {
-    backgroundColor: '#E9F2EC',
+    backgroundColor: '#E8E8E8', // Light Dove Grey
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
     padding: 16,
   },
   modalButton: {
-    backgroundColor: '#8FB89C',
+    backgroundColor: '#D4C5B3', // Warm Taupe
     borderRadius: 12,
     paddingVertical: 10,
     alignItems: 'center',
     marginTop: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 1,
   },
   modalButtonText: {
-    color: '#2D3A2E',
+    color: '#3B322C', // Warm Taupe
     fontSize: 14,
     fontWeight: 'bold',
   },
   addBtn: {
     alignItems: 'center',
-    backgroundColor: '#E9F2EC',
+    backgroundColor: '#E8E8E8', // Light Dove Grey
     borderRadius: 12,
     paddingVertical: 10,
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 1,
   },
   addBtnText: {
     fontSize: 15,
-    color: '#2D3A2E',
+    color: '#3B322C', // Warm Taupe
     fontWeight: '600',
   },
   saveBtn: {
-    backgroundColor: '#8FB89C',
+    backgroundColor: '#D4C5B3', // Warm Taupe
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 1,
   },
   saveBtnText: {
-    color: '#2D3A2E',
+    color: '#3B322C', // Warm Taupe
     fontSize: 16,
     fontWeight: 'bold',
   },
   genderDropdownItemSelected: {
-  backgroundColor: '#D9F0D9', // Light green background for selected
-},
+    backgroundColor: '#F5EDE1', // Beige Cream for selected
+  },
 });
