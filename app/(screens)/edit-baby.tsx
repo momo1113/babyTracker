@@ -6,6 +6,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  FlatList,
+  Alert,
 } from 'react-native';
 import Modal from 'react-native-modal';
 import { Calendar } from 'react-native-calendars';
@@ -19,29 +21,77 @@ export default function EditBabyScreen() {
   const [growthData, setGrowthData] = useState([
     { date: '2025-07-01', weight: '14.2', height: '24.5' },
   ]);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [selectedEntryIndex, setSelectedEntryIndex] = useState(null);
+
+  // DOB modal states
+  const [dobModalVisible, setDobModalVisible] = useState(false);
+
+  // Growth date modal states
+  const [growthDateModalVisible, setGrowthDateModalVisible] = useState(false);
+  const [selectedEntryIndex, setSelectedEntryIndex] = useState<number | null>(null);
+
+  // Gender dropdown state
+  const [genderDropdownVisible, setGenderDropdownVisible] = useState(false);
+
+  // Temp date for modals
   const [tempDate, setTempDate] = useState('');
 
-  const handleDateSelect = (day) => {
+  // Gender options with icons
+  const genderOptions = [
+    { label: 'Female', icon: 'gender-female' },
+    { label: 'Male', icon: 'gender-male' },
+  ];
+
+  // Handlers for DOB calendar
+  const openDobCalendar = () => {
+    setTempDate(dob);
+    setDobModalVisible(true);
+  };
+
+  const onDobSelect = (day) => {
+    setDob(day.dateString);
+    setDobModalVisible(false);
+  };
+
+  // Handlers for growth entry calendar
+  const openGrowthCalendar = (index: number) => {
+    setSelectedEntryIndex(index);
+    setTempDate(growthData[index].date || '');
+    setGrowthDateModalVisible(true);
+  };
+
+  const onGrowthDateSelect = (day) => {
     if (selectedEntryIndex !== null) {
       const newData = [...growthData];
       newData[selectedEntryIndex].date = day.dateString;
       setGrowthData(newData);
     }
-    setIsModalVisible(false);
+    setGrowthDateModalVisible(false);
     setSelectedEntryIndex(null);
-    setTempDate('');
   };
 
-  const openCalendar = (index) => {
-    setSelectedEntryIndex(index);
-    setTempDate(growthData[index].date || '');
-    setIsModalVisible(true);
+  // Handle selecting gender
+  const onSelectGender = (option: string) => {
+    setGender(option);
+    setGenderDropdownVisible(false);
+  };
+
+  // Validate growth entries before adding a new one
+  const onAddGrowthEntry = () => {
+    for (let i = 0; i < growthData.length; i++) {
+      const entry = growthData[i];
+      if (!entry.weight || !entry.height) {
+        Alert.alert(
+          'Validation Error',
+          `Please enter weight and height for growth entry ${i + 1} before adding a new one.`
+        );
+        return;
+      }
+    }
+    setGrowthData([...growthData, { date: '', weight: '', height: '' }]);
   };
 
   const handleSave = () => {
-    // TODO: save to backend or local storage
+    // TODO: Save to backend or local storage
     router.back();
   };
 
@@ -57,68 +107,137 @@ export default function EditBabyScreen() {
         <Text style={styles.backButtonText}>Back</Text>
       </TouchableOpacity>
 
-      <Text style={styles.header}>✏️ Edit Baby Profile</Text>
+      <Text style={styles.header}>Edit Baby Profile</Text>
 
+      {/* Date of Birth */}
       <Text style={styles.label}>Date of Birth</Text>
-      <TextInput
-        style={styles.input}
-        value={dob}
-        onChangeText={setDob}
-        placeholder="YYYY-MM-DD"
-        accessibilityLabel="Date of Birth"
-      />
-
-      <Text style={styles.label}>Gender</Text>
-      <TextInput
-        style={styles.input}
-        value={gender}
-        onChangeText={setGender}
-        accessibilityLabel="Gender"
-      />
-
-      <Text style={styles.sectionTitle}>📈 Growth Entries</Text>
-      {growthData.map((entry, index) => (
-        <View key={index} style={styles.growthRow}>
-          <TouchableOpacity
-            style={styles.dateButton}
-            onPress={() => openCalendar(index)}
-            accessibilityLabel={`Select date for growth entry ${index + 1}`}
-          >
-            <IconSymbol name="calendar" size={16} color="#687076" />
-            <Text style={styles.dateButtonText}>
-              {entry.date || 'Select Date'}
-            </Text>
-          </TouchableOpacity>
+      <TouchableOpacity
+        onPress={openDobCalendar}
+        activeOpacity={0.7}
+        accessibilityLabel="Select Date of Birth"
+      >
+        <View pointerEvents="none">
           <TextInput
-            style={styles.growthInput}
-            placeholder="Weight (lbs)"
-            keyboardType="numeric"
-            value={entry.weight}
-            onChangeText={(text) => {
-              const newData = [...growthData];
-              newData[index].weight = text;
-              setGrowthData(newData);
-            }}
-            accessibilityLabel={`Growth entry ${index + 1} weight`}
-          />
-          <TextInput
-            style={styles.growthInput}
-            placeholder="Height (in)"
-            keyboardType="numeric"
-            value={entry.height}
-            onChangeText={(text) => {
-              const newData = [...growthData];
-              newData[index].height = text;
-              setGrowthData(newData);
-            }}
-            accessibilityLabel={`Growth entry ${index + 1} height`}
+            style={styles.input}
+            value={dob}
+            editable={false}
+            placeholder="YYYY-MM-DD"
           />
         </View>
-      ))}
+      </TouchableOpacity>
 
+      {/* Gender */}
+      <Text style={styles.label}>Gender</Text>
+      <TouchableOpacity
+        style={styles.input}
+        onPress={() => setGenderDropdownVisible(!genderDropdownVisible)}
+        activeOpacity={0.7}
+        accessibilityLabel="Select Gender"
+      >
+        <Text style={{ color: gender ? '#2D3A2E' : '#7A867B', fontSize: 15 }}>
+          {gender || 'Select Gender'}
+        </Text>
+      </TouchableOpacity>
+
+      {genderDropdownVisible && (
+        <View style={styles.dropdown}>
+          {genderOptions.map(({ label, icon }) => (
+            <TouchableOpacity
+              key={label}
+              style={styles.dropdownItem}
+              onPress={() => onSelectGender(label)}
+              accessibilityLabel={`Select gender ${label}`}
+            >
+              <View style={styles.genderOptionRow}>
+                <IconSymbol name={icon} size={32} color="#687076" />
+                <Text style={styles.dropdownItemText}>{label}</Text>
+                {gender === label && (
+                  <IconSymbol
+                    name="checkmark.circle.fill"
+                    size={24}
+                    color="#8FB89C"
+                    style={{ marginLeft: 'auto' }}
+                  />
+                )}
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
+      {/* Growth Entries Section */}
+      <Text style={styles.sectionTitle}>Growth Entries</Text>
+      <View style={styles.growthEntriesContainer}>
+        <FlatList
+          data={growthData}
+          keyExtractor={(_, index) => index.toString()}
+          scrollEnabled={true}
+          showsVerticalScrollIndicator={true}
+          renderItem={({ item, index }) => (
+            <View key={index} style={styles.growthRow}>
+              <TouchableOpacity
+                style={styles.dateButton}
+                onPress={() => openGrowthCalendar(index)}
+                accessibilityLabel={`Select date for growth entry ${index + 1}`}
+              >
+                <IconSymbol name="calendar" size={16} color="#687076" />
+                <Text style={styles.dateButtonText}>
+                  {item.date || 'Select Date'}
+                </Text>
+              </TouchableOpacity>
+              <TextInput
+                style={styles.growthInput}
+                placeholder="Weight (lbs)"
+                keyboardType="numeric"
+                value={item.weight}
+                onChangeText={(text) => {
+                  const newData = [...growthData];
+                  newData[index].weight = text;
+                  setGrowthData(newData);
+                }}
+                accessibilityLabel={`Growth entry ${index + 1} weight`}
+              />
+              <TextInput
+                style={styles.growthInput}
+                placeholder="Height (in)"
+                keyboardType="numeric"
+                value={item.height}
+                onChangeText={(text) => {
+                  const newData = [...growthData];
+                  newData[index].height = text;
+                  setGrowthData(newData);
+                }}
+                accessibilityLabel={`Growth entry ${index + 1} height`}
+              />
+            </View>
+          )}
+        />
+      </View>
+
+      {/* Add Growth Entry */}
+      <TouchableOpacity
+        style={styles.addBtn}
+        onPress={onAddGrowthEntry}
+        activeOpacity={0.8}
+        accessibilityLabel="Add new growth entry"
+      >
+        <Text style={styles.addBtnText}>+ Add Growth Entry</Text>
+      </TouchableOpacity>
+
+      {/* Save Button */}
+      <TouchableOpacity
+        style={styles.saveBtn}
+        onPress={handleSave}
+        activeOpacity={0.8}
+        accessibilityLabel="Save baby profile"
+      >
+        <Text style={styles.saveBtnText}>Save</Text>
+      </TouchableOpacity>
+
+      {/* DOB Calendar Modal */}
       <Modal
-        isVisible={isModalVisible}
-        onBackdropPress={() => setIsModalVisible(false)}
+        isVisible={dobModalVisible}
+        onBackdropPress={() => setDobModalVisible(false)}
         style={styles.modal}
         animationIn="slideInUp"
         animationOut="slideOutDown"
@@ -126,7 +245,50 @@ export default function EditBabyScreen() {
         <View style={styles.modalContent}>
           <Calendar
             current={tempDate || '2025-07-18'}
-            onDayPress={handleDateSelect}
+            onDayPress={onDobSelect}
+            markedDates={{
+              [tempDate]: { selected: true, selectedColor: '#8FB89C' },
+            }}
+            theme={{
+              backgroundColor: '#E9F2EC',
+              calendarBackground: '#E9F2EC',
+              textSectionTitleColor: '#2D3A2E',
+              selectedDayBackgroundColor: '#8FB89C',
+              selectedDayTextColor: '#2D3A2E',
+              todayTextColor: '#8FB89C',
+              dayTextColor: '#2D3A2E',
+              textDisabledColor: '#7A867B',
+              arrowColor: '#687076',
+              monthTextColor: '#2D3A2E',
+              textDayFontSize: 14,
+              textMonthFontSize: 16,
+              textDayHeaderFontSize: 14,
+            }}
+            accessibilityLabel="Calendar for selecting date of birth"
+          />
+          <TouchableOpacity
+            style={styles.modalButton}
+            onPress={() => setDobModalVisible(false)}
+            activeOpacity={0.8}
+            accessibilityLabel="Close calendar"
+          >
+            <Text style={styles.modalButtonText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+
+      {/* Growth Date Calendar Modal */}
+      <Modal
+        isVisible={growthDateModalVisible}
+        onBackdropPress={() => setGrowthDateModalVisible(false)}
+        style={styles.modal}
+        animationIn="slideInUp"
+        animationOut="slideOutDown"
+      >
+        <View style={styles.modalContent}>
+          <Calendar
+            current={tempDate || '2025-07-18'}
+            onDayPress={onGrowthDateSelect}
             markedDates={{
               [tempDate]: { selected: true, selectedColor: '#8FB89C' },
             }}
@@ -149,7 +311,7 @@ export default function EditBabyScreen() {
           />
           <TouchableOpacity
             style={styles.modalButton}
-            onPress={() => setIsModalVisible(false)}
+            onPress={() => setGrowthDateModalVisible(false)}
             activeOpacity={0.8}
             accessibilityLabel="Close calendar"
           >
@@ -157,26 +319,6 @@ export default function EditBabyScreen() {
           </TouchableOpacity>
         </View>
       </Modal>
-
-      <TouchableOpacity
-        style={styles.addBtn}
-        onPress={() =>
-          setGrowthData([...growthData, { date: '', weight: '', height: '' }])
-        }
-        activeOpacity={0.8}
-        accessibilityLabel="Add new growth entry"
-      >
-        <Text style={styles.addBtnText}>+ Add Growth Entry</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.saveBtn}
-        onPress={handleSave}
-        activeOpacity={0.8}
-        accessibilityLabel="Save baby profile"
-      >
-        <Text style={styles.saveBtnText}>Save</Text>
-      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -195,7 +337,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 8,
-    zIndex: 1,
+    zIndex: 10,
   },
   backButtonText: {
     fontSize: 14,
@@ -228,12 +370,41 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 2,
     elevation: 1,
+    justifyContent: 'center',
+  },
+  dropdown: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#C5D7BD',
+    marginBottom: 16,
+    paddingVertical: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  dropdownItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+  },
+  dropdownItemText: {
+    fontSize: 15,
+    color: '#2D3A2E',
+  },
+  genderOptionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#2D3A2E',
     marginVertical: 12,
+  },
+  growthEntriesContainer: {
+    maxHeight: 320, // Fixed height for scroll inside this section
   },
   growthRow: {
     flexDirection: 'row',
