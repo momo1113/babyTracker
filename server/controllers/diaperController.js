@@ -1,8 +1,6 @@
 const { z } = require('zod');
+const { db } = require('../firebaseAdmin');  // import Firestore
 
-const diaperLogs = [];
-
-// Zod schema
 const diaperSchema = z.object({
   type: z.enum(['Pee', 'Poop', 'Both']),
   time: z.string().regex(/^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$/i, 'Invalid time format'),
@@ -12,11 +10,11 @@ const diaperSchema = z.object({
   notes: z.string().optional(),
 });
 
-function saveDiaperLog(req, res) {
+async function saveDiaperLog(req, res) {
   try {
     const parsed = diaperSchema.parse(req.body);
 
-    // Extra rules: if type is not "Pee", consistency and color are required
+    // Extra validation
     if (parsed.type !== 'Pee') {
       if (!parsed.consistency) {
         return res.status(400).json({ error: 'Consistency is required for poop or both' });
@@ -27,20 +25,28 @@ function saveDiaperLog(req, res) {
     }
 
     const entry = {
-      id: diaperLogs.length + 1,
       ...parsed,
       timestamp: new Date().toISOString(),
     };
 
-    diaperLogs.push(entry);
-    return res.status(201).json({ message: 'Diaper log saved', data: entry });
+    // Save to Firestore collection "diaperLogs"
+    const docRef = await db.collection('diaperLogs').add(entry);
+
+    return res.status(201).json({ message: 'Diaper log saved', id: docRef.id, data: entry });
   } catch (err) {
     return res.status(400).json({ error: err.errors?.[0]?.message || 'Validation failed' });
   }
 }
 
-function getDiaperLogs(req, res) {
-  res.json(diaperLogs);
+async function getDiaperLogs(req, res) {
+  try {
+    const snapshot = await db.collection('diaperLogs').get();
+    const logs = [];
+    snapshot.forEach(doc => logs.push({ id: doc.id, ...doc.data() }));
+    res.json(logs);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch diaper logs' });
+  }
 }
 
 module.exports = {

@@ -17,40 +17,50 @@ export default function DiaperLogScreen() {
   const [pickerMode, setPickerMode] = useState<'time' | 'date' | null>(null);
 
   const handleSave = async () => {
-    const payload = {
-      type,
-      time,
-      date,
-      notes,
-      timestamp: new Date().toISOString(),
-    };
-
-    if (type !== 'Pee') {
-      payload.consistency = consistency;
-      payload.color = color;
-    }
-
-    try {
-      const response = await fetch('http://192.168.1.9:3000/diaper', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        alert(`Error: ${errorData.error || 'Save failed'}`);
-        return;
-      }
-
-      const data = await response.json();
-      console.log('Save successful:', data);
-      router.back();
-    } catch (error) {
-      console.error('Network error:', error);
-      alert('Network error, please try again.');
-    }
+  const payload = {
+    type,
+    time,
+    date,
+    notes,
+    timestamp: new Date().toISOString(),
   };
+
+  if (type !== 'Pee') {
+    payload.consistency = consistency;
+    payload.color = color;
+  }
+
+  try {
+    const response = await fetch('http://192.168.1.9:3000/diaper', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      alert(`Error: ${errorData.error || 'Save failed'}`);
+      return;
+    }
+
+    const data = await response.json();
+    console.log('Save successful:', data);
+
+    // Show success message
+    if (Platform.OS === 'android') {
+      ToastAndroid.show('Diaper log saved successfully!', ToastAndroid.SHORT);
+      // Small delay to let toast show before navigating back
+      setTimeout(() => router.back(), 1000);
+    } else {
+      Alert.alert('Success', 'Diaper log saved successfully!');
+      router.back();
+    }
+  } catch (error) {
+    console.error('Network error:', error);
+    alert('Network error, please try again.');
+  }
+};
+
 
   const onSelectType = (t) => {
     setType(t);

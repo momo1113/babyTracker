@@ -6,82 +6,56 @@ import {
   TextInput,
   StyleSheet,
   ScrollView,
-  Alert,
   Platform,
+  Alert,
   ToastAndroid,
 } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 
-export default function FeedingLogScreen() {
+export default function DiaperLogScreen() {
   const router = useRouter();
-  const [feedingType, setFeedingType] = useState('Breast');
-  const [side, setSide] = useState('Left');
-  const [amount, setAmount] = useState('');
-  const [unit, setUnit] = useState('oz');
-  const [duration, setDuration] = useState('15');
+
+  const [type, setType] = useState('Pee');
+  const [time, setTime] = useState(formatTime(new Date()));
+  const [date, setDate] = useState(formatDate(new Date()));
+  const [consistency, setConsistency] = useState('');
+  const [color, setColor] = useState('');
   const [notes, setNotes] = useState('');
-  const [dateTime, setDateTime] = useState(new Date());
 
-  const [pickerVisible, setPickerVisible] = useState(false);
-  const [pickerMode, setPickerMode] = useState<'date' | 'time'>('time');
+  const [pickerMode, setPickerMode] = useState<'time' | 'date' | null>(null);
 
-  const formatTime = (date: Date) =>
-    date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const formatDate = (date: Date) =>
-    date.toLocaleDateString('en-US', {
-      month: '2-digit',
-      day: '2-digit',
-      year: 'numeric',
-    });
-
-  const showPicker = (mode: 'time' | 'date') => {
-    setPickerMode(mode);
-    setPickerVisible(true);
-  };
-
-  const handlePickerChange = (_event: any, selectedDate: Date | undefined) => {
-    if (selectedDate) {
-      const newDate = new Date(dateTime);
-      if (pickerMode === 'time') {
-        newDate.setHours(selectedDate.getHours());
-        newDate.setMinutes(selectedDate.getMinutes());
-      } else {
-        newDate.setFullYear(selectedDate.getFullYear());
-        newDate.setMonth(selectedDate.getMonth());
-        newDate.setDate(selectedDate.getDate());
-      }
-      setDateTime(newDate);
+  const showMessage = (title, message, onOk) => {
+    if (Platform.OS === 'android') {
+      ToastAndroid.show(message, ToastAndroid.SHORT);
+      if (onOk) onOk();
+    } else {
+      Alert.alert(title, message, [
+        {
+          text: 'OK',
+          onPress: onOk,
+        },
+      ]);
     }
-    setPickerVisible(false);
   };
 
   const handleSave = async () => {
-    if ((feedingType === 'Bottle' || feedingType === 'Formula') && !amount) {
-      Alert.alert('Validation Error', 'Please enter an amount for Bottle or Formula feeding.');
-      return;
-    }
-
-    if (!duration || isNaN(Number(duration)) || Number(duration) <= 0) {
-      Alert.alert('Validation Error', 'Please enter a valid feeding duration in minutes.');
-      return;
-    }
-
     const payload = {
-      feedingType,
-      side: feedingType === 'Breast' ? side : null,
-      amount: feedingType !== 'Breast' ? amount : null,
-      unit: feedingType !== 'Breast' ? unit : null,
-      duration,
+      type,
+      time,
+      date,
       notes,
-      timestamp: dateTime.toISOString(),
+      timestamp: new Date().toISOString(),
     };
 
-    const BASE_URL = 'http://192.168.1.9:3000';
+    if (type !== 'Pee') {
+      payload.consistency = consistency;
+      payload.color = color;
+    }
 
     try {
-      const response = await fetch(`${BASE_URL}/feeding`, {
+      const response = await fetch('http://192.168.1.9:3000/diaper', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -89,22 +63,48 @@ export default function FeedingLogScreen() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to save feeding log');
+        if (Platform.OS === 'android') {
+          ToastAndroid.show(errorData.error || 'Save failed', ToastAndroid.SHORT);
+        } else {
+          Alert.alert('Error', errorData.error || 'Save failed');
+        }
+        return;
       }
 
-      await response.json();
+      const data = await response.json();
+      console.log('Save successful:', data);
 
+      showMessage('Success', 'Diaper log saved successfully!', () => router.back());
+    } catch (error) {
+      console.error('Network error:', error);
       if (Platform.OS === 'android') {
-        ToastAndroid.show('Feeding log saved successfully!', ToastAndroid.SHORT);
+        ToastAndroid.show('Network error, please try again.', ToastAndroid.SHORT);
       } else {
-        Alert.alert('Success', 'Feeding log saved successfully!');
+        Alert.alert('Network error', 'Please try again.');
       }
-
-      router.push('/home');
-    } catch (error: any) {
-      console.error('❌ Error:', error);
-      Alert.alert('Error', error.message || 'Something went wrong');
     }
+  };
+
+  const onSelectType = (t) => {
+    setType(t);
+    if (t === 'Pee') {
+      setConsistency('');
+      setColor('');
+    }
+  };
+
+  const handlePickerChange = (event, selectedDate) => {
+    if (!selectedDate) {
+      setPickerMode(null);
+      return;
+    }
+
+    if (pickerMode === 'time') {
+      setTime(formatTime(selectedDate));
+    } else {
+      setDate(formatDate(selectedDate));
+    }
+    setPickerMode(null);
   };
 
   return (
@@ -112,113 +112,111 @@ export default function FeedingLogScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <IconSymbol name="arrow.left" size={22} color="#687076" />
+          <IconSymbol name="chevron.backward" size={22} color="#687076" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Feeding Log</Text>
+        <Text style={styles.headerTitle}>Diaper Log</Text>
         <View style={{ width: 22 }} />
       </View>
 
-      {/* Feeding Type */}
-      <Text style={styles.label}>Feeding Type</Text>
+      {/* Type Picker */}
+      <Text style={styles.label}>Diaper Type</Text>
       <View style={styles.row}>
-        {['Breast', 'Bottle', 'Formula'].map(type => (
+        {['Pee', 'Poop', 'Both'].map(t => (
           <TouchableOpacity
-            key={type}
-            style={[styles.selectBtn, feedingType === type && styles.selectBtnActive]}
-            onPress={() => setFeedingType(type)}
+            key={t}
+            style={[styles.selectBtn, type === t && styles.selectBtnActive]}
+            onPress={() => onSelectType(t)}
           >
             <IconSymbol
-              name={
-                type === 'Breast' ? 'heart.fill' : type === 'Bottle' ? 'drop.fill' : 'testtube.2'
-              }
+              name={t === 'Pee' ? 'water.waves' : t === 'Poop' ? 'leaf.fill' : 'circle'}
               size={18}
-              color={feedingType === type ? '#fff' : '#687076'}
+              color={type === t ? '#fff' : '#687076'}
             />
-            <Text style={[styles.selectBtnText, feedingType === type && styles.selectBtnTextActive]}>
-              {type}
+            <Text style={[styles.selectBtnText, type === t && styles.selectBtnTextActive]}>
+              {t}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {/* Breast Side */}
-      {feedingType === 'Breast' && (
-        <>
-          <Text style={styles.label}>Side (Breast)</Text>
-          <View style={styles.row}>
-            {['Left', 'Right', 'Both'].map(s => (
-              <TouchableOpacity
-                key={s}
-                style={[styles.selectBtn, side === s && styles.selectBtnActive]}
-                onPress={() => setSide(s)}
-              >
-                <Text style={[styles.selectBtnText, side === s && styles.selectBtnTextActive]}>
-                  {s}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </>
-      )}
-
-      {/* Amount */}
-      {(feedingType === 'Bottle' || feedingType === 'Formula') && (
-        <>
-          <Text style={styles.label}>Amount</Text>
-          <View style={styles.row}>
-            <TextInput
-              style={styles.amountInput}
-              value={amount}
-              onChangeText={setAmount}
-              keyboardType="numeric"
-              placeholder="0"
-            />
-            <TouchableOpacity
-              style={styles.unitBtn}
-              onPress={() => setUnit(unit === 'oz' ? 'ml' : 'oz')}
-            >
-              <Text style={styles.unitText}>{unit}</Text>
-            </TouchableOpacity>
-          </View>
-        </>
-      )}
-
       {/* Time + Date Picker */}
       <Text style={styles.label}>Time</Text>
       <View style={styles.timeRow}>
-        <TouchableOpacity style={styles.timeInput} onPress={() => showPicker('time')}>
-          <Text style={styles.inputText}>{formatTime(dateTime)}</Text>
+        <TouchableOpacity onPress={() => setPickerMode('time')} style={styles.timeInput}>
+          <Text style={{ color: '#11181C' }}>{time}</Text>
         </TouchableOpacity>
         <IconSymbol name="clock" size={18} color="#687076" />
-        <TouchableOpacity style={styles.dateInput} onPress={() => showPicker('date')}>
-          <Text style={styles.inputText}>{formatDate(dateTime)}</Text>
+        <TouchableOpacity onPress={() => setPickerMode('date')} style={styles.dateInput}>
+          <Text style={{ color: '#11181C' }}>{date}</Text>
         </TouchableOpacity>
         <IconSymbol name="calendar" size={18} color="#687076" />
       </View>
 
-      {/* Shared DateTime Picker (fixed height to avoid flicker) */}
-      <View style={{ height: pickerVisible ? 220 : 0, overflow: 'hidden' }}>
-        {pickerVisible && (
+      {/* Picker below inputs */}
+      <View style={{ minHeight: pickerMode ? 200 : 0 }}>
+        {pickerMode && (
           <DateTimePicker
-            value={dateTime}
+            value={new Date()}
             mode={pickerMode}
             display={Platform.OS === 'ios' ? 'spinner' : 'default'}
             onChange={handlePickerChange}
+            style={{ flex: 1 }}
           />
         )}
       </View>
 
-      {/* Duration */}
-      <Text style={styles.label}>Duration</Text>
-      <View style={styles.row}>
-        <TextInput
-          style={styles.durationInput}
-          value={duration}
-          onChangeText={setDuration}
-          keyboardType="numeric"
-          placeholder="e.g. 15"
-        />
-        <Text style={styles.durationText}>minutes</Text>
+      {/* Consistency (Poop only) */}
+      <Text style={styles.label}>Consistency (Poop)</Text>
+      <View style={styles.gridRow}>
+        {['Soft', 'Firm', 'Loose', 'Watery'].map(c => (
+          <TouchableOpacity
+            key={c}
+            style={[
+              styles.gridBtn,
+              consistency === c && styles.gridBtnActive,
+              type === 'Pee' && { opacity: 0.5 },
+            ]}
+            onPress={() => type !== 'Pee' && setConsistency(c)}
+            disabled={type === 'Pee'}
+          >
+            <Text
+              style={[
+                styles.gridBtnText,
+                consistency === c && styles.gridBtnTextActive,
+                type === 'Pee' && { color: '#ccc' },
+              ]}
+            >
+              {c}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Color (Poop only) */}
+      <Text style={styles.label}>Color (Poop)</Text>
+      <View style={styles.gridRow}>
+        {['Yellow', 'Brown', 'Green'].map(col => (
+          <TouchableOpacity
+            key={col}
+            style={[
+              styles.gridBtn,
+              color === col && styles.gridBtnActive,
+              type === 'Pee' && { opacity: 0.5 },
+            ]}
+            onPress={() => type !== 'Pee' && setColor(col)}
+            disabled={type === 'Pee'}
+          >
+            <Text
+              style={[
+                styles.gridBtnText,
+                color === col && styles.gridBtnTextActive,
+                type === 'Pee' && { color: '#ccc' },
+              ]}
+            >
+              {col}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       {/* Notes */}
@@ -227,7 +225,7 @@ export default function FeedingLogScreen() {
         style={styles.notesInput}
         value={notes}
         onChangeText={setNotes}
-        placeholder="Add any notes about this feeding..."
+        placeholder="Add any notes about this diaper change..."
         multiline
       />
 
@@ -239,6 +237,20 @@ export default function FeedingLogScreen() {
   );
 }
 
+function formatTime(date) {
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  return `${((hours + 11) % 12 + 1)}:${String(minutes).padStart(2, '0')} ${ampm}`;
+}
+
+function formatDate(date) {
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const year = date.getFullYear();
+  return `${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')}/${year}`;
+}
+
 const styles = StyleSheet.create({
   container: {
     padding: 20,
@@ -246,35 +258,20 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   header: {
-    paddingTop: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingTop: 44,
     marginBottom: 16,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#11181C',
+    textAlign: 'center',
   },
   label: { fontSize: 15, fontWeight: '500', marginTop: 18, marginBottom: 8, color: '#11181C' },
-
-  row: { flexDirection: 'row', gap: 8, marginBottom: 8, alignItems: 'center' },
-  timeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  timeInput: {
-    width: 100,
-    backgroundColor: '#F7F8F9',
-    borderRadius: 8,
-    padding: 12,
-  },
-  dateInput: {
-    width: 110,
-    backgroundColor: '#F7F8F9',
-    borderRadius: 8,
-    padding: 12,
-  },
-  inputText: { fontSize: 15, color: '#11181C' },
-
+  row: { flexDirection: 'row', gap: 12 },
   selectBtn: {
     flex: 1,
     flexDirection: 'row',
@@ -288,40 +285,44 @@ const styles = StyleSheet.create({
   selectBtnActive: { backgroundColor: '#11181C' },
   selectBtnText: { fontSize: 15, color: '#687076' },
   selectBtnTextActive: { color: '#fff', fontWeight: 'bold' },
-
-  amountInput: {
-    flex: 1,
+  timeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  timeInput: {
+    width: 100,
     backgroundColor: '#F7F8F9',
     borderRadius: 8,
     padding: 12,
     fontSize: 15,
+    color: '#11181C',
   },
-  unitBtn: {
+  dateInput: {
+    width: 110,
     backgroundColor: '#F7F8F9',
     borderRadius: 8,
-    paddingHorizontal: 16,
+    padding: 12,
+    fontSize: 15,
+    color: '#11181C',
+  },
+  gridRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  gridBtn: {
+    flex: 1,
+    minWidth: 90,
+    alignItems: 'center',
+    backgroundColor: '#F7F8F9',
+    borderRadius: 8,
     paddingVertical: 12,
   },
-  unitText: { fontSize: 15, color: '#687076' },
-
-  durationInput: {
-    width: 60,
-    backgroundColor: '#F7F8F9',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 15,
-  },
-  durationText: { fontSize: 15, color: '#687076' },
-
+  gridBtnActive: { backgroundColor: '#11181C' },
+  gridBtnText: { fontSize: 15, color: '#687076' },
+  gridBtnTextActive: { color: '#fff', fontWeight: 'bold' },
   notesInput: {
     backgroundColor: '#F7F8F9',
     borderRadius: 8,
     padding: 12,
     fontSize: 15,
+    color: '#11181C',
     minHeight: 60,
     marginBottom: 8,
   },
-
   saveBtn: {
     backgroundColor: '#11181C',
     borderRadius: 10,
