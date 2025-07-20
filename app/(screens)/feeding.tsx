@@ -8,6 +8,7 @@ import {
   ScrollView,
   Alert,
   Platform,
+  ToastAndroid,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
@@ -31,9 +32,23 @@ export default function FeedingLogScreen() {
   const formatDate = (date: Date) =>
     date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
 
+  const showTime = () => {
+    setShowDatePicker(false);
+    setShowTimePicker(true);
+  };
+  const showDate = () => {
+    setShowTimePicker(false);
+    setShowDatePicker(true);
+  };
+
   const handleSave = async () => {
     if ((feedingType === 'Bottle' || feedingType === 'Formula') && !amount) {
-      Alert.alert('Validation Error', 'Amount is required for Bottle or Formula feeding');
+      Alert.alert('Validation Error', 'Please enter an amount for Bottle or Formula feeding.');
+      return;
+    }
+
+    if (!duration || isNaN(Number(duration)) || Number(duration) <= 0) {
+      Alert.alert('Validation Error', 'Please enter a valid feeding duration in minutes.');
       return;
     }
 
@@ -61,10 +76,15 @@ export default function FeedingLogScreen() {
         throw new Error(errorData.error || 'Failed to save feeding log');
       }
 
-      const data = await response.json();
-      console.log('Feeding log saved:', data);
+      await response.json();
+
+      if (Platform.OS === 'android') {
+        ToastAndroid.show('Feeding log saved successfully!', ToastAndroid.SHORT);
+      } else {
+        Alert.alert('Success', 'Feeding log saved successfully!');
+      }
       router.back();
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error:', error);
       Alert.alert('Error', error.message || 'Something went wrong');
     }
@@ -154,7 +174,7 @@ export default function FeedingLogScreen() {
       <View style={styles.timeRow}>
         <TouchableOpacity
           style={styles.timeInput}
-          onPress={() => setShowTimePicker(true)}
+          onPress={showTime}
         >
           <Text style={styles.inputText}>{formatTime(dateTime)}</Text>
         </TouchableOpacity>
@@ -162,7 +182,7 @@ export default function FeedingLogScreen() {
 
         <TouchableOpacity
           style={styles.dateInput}
-          onPress={() => setShowDatePicker(true)}
+          onPress={showDate}
         >
           <Text style={styles.inputText}>{formatDate(dateTime)}</Text>
         </TouchableOpacity>
@@ -176,7 +196,9 @@ export default function FeedingLogScreen() {
           display={Platform.OS === 'ios' ? 'spinner' : 'default'}
           onChange={(event, selectedDate) => {
             setShowTimePicker(false);
-            if (selectedDate) setDateTime(prev => new Date(prev.setHours(selectedDate.getHours(), selectedDate.getMinutes())));
+            if (selectedDate) {
+              setDateTime(prev => new Date(prev.setHours(selectedDate.getHours(), selectedDate.getMinutes())));
+            }
           }}
         />
       )}
@@ -188,7 +210,9 @@ export default function FeedingLogScreen() {
           display={Platform.OS === 'ios' ? 'spinner' : 'default'}
           onChange={(event, selectedDate) => {
             setShowDatePicker(false);
-            if (selectedDate) setDateTime(prev => new Date(selectedDate.setHours(prev.getHours(), prev.getMinutes())));
+            if (selectedDate) {
+              setDateTime(prev => new Date(selectedDate.setHours(prev.getHours(), prev.getMinutes())));
+            }
           }}
         />
       )}
@@ -321,5 +345,5 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   saveBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  inputText: { fontSize: 15, color: '#11181C' }
+  inputText: { fontSize: 15, color: '#11181C' },
 });
