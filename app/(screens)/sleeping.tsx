@@ -13,36 +13,66 @@ export default function SleepLogScreen() {
   const [type, setType] = useState('Nap');
   const [location, setLocation] = useState('');
   const [quality, setQuality] = useState('');
-
-  const [pickerMode, setPickerMode] = useState<'start-time' | 'start-date' | 'end-time' | 'end-date' | null>(null);
   const [notes, setNotes] = useState('');
 
-  const showPicker = (mode: typeof pickerMode) => {
-    setPickerMode(mode);
-  };
-
-  const handlePickerChange = (event: any, selectedDate: Date | undefined) => {
-    if (!selectedDate) return setPickerMode(null);
-
-    switch (pickerMode) {
-      case 'start-time':
-        setStartTime(prev => new Date(prev.setHours(selectedDate.getHours(), selectedDate.getMinutes())));
-        break;
-      case 'start-date':
-        setStartTime(prev => new Date(selectedDate.setHours(prev.getHours(), prev.getMinutes())));
-        break;
-      case 'end-time':
-        setEndTime(prev => new Date(prev.setHours(selectedDate.getHours(), selectedDate.getMinutes())));
-        break;
-      case 'end-date':
-        setEndTime(prev => new Date(selectedDate.setHours(prev.getHours(), prev.getMinutes())));
-        break;
-    }
-    setPickerMode(null);
-  };
+  // pickerMode controls which picker is open
+  // possible values: 'start-time', 'start-date', 'end-time', 'end-date', or null
+  const [pickerMode, setPickerMode] = useState<
+    'start-time' | 'start-date' | 'end-time' | 'end-date' | null
+  >(null);
 
   const formatTime = (date: Date) => date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const formatDate = (date: Date) => date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+
+  // Show picker only if no other picker is open or toggle off if same picker tapped
+  const showPicker = (mode: typeof pickerMode) => {
+    setPickerMode(current => (current === mode ? null : mode));
+  };
+
+  // Handle the date/time selection from picker
+  const handlePickerChange = (event: any, selectedDate: Date | undefined) => {
+    if (!selectedDate) {
+      setPickerMode(null);
+      return;
+    }
+
+    switch (pickerMode) {
+      case 'start-time':
+        setStartTime(prev => {
+          const newDate = new Date(prev);
+          newDate.setHours(selectedDate.getHours());
+          newDate.setMinutes(selectedDate.getMinutes());
+          return newDate;
+        });
+        break;
+      case 'start-date':
+        setStartTime(prev => {
+          const newDate = new Date(selectedDate);
+          newDate.setHours(prev.getHours());
+          newDate.setMinutes(prev.getMinutes());
+          return newDate;
+        });
+        break;
+      case 'end-time':
+        setEndTime(prev => {
+          const newDate = new Date(prev);
+          newDate.setHours(selectedDate.getHours());
+          newDate.setMinutes(selectedDate.getMinutes());
+          return newDate;
+        });
+        break;
+      case 'end-date':
+        setEndTime(prev => {
+          const newDate = new Date(selectedDate);
+          newDate.setHours(prev.getHours());
+          newDate.setMinutes(prev.getMinutes());
+          return newDate;
+        });
+        break;
+    }
+
+    setPickerMode(null);
+  };
 
   const handleSave = async () => {
     if (!type || !location || !quality || !startTime || !endTime) {
@@ -62,6 +92,7 @@ export default function SleepLogScreen() {
       location,
       quality,
       timestamp: new Date().toISOString(),
+      notes,
     };
 
     try {
@@ -76,6 +107,7 @@ export default function SleepLogScreen() {
         throw new Error(errorData.error || 'Failed to save sleep log');
       }
 
+      Alert.alert('Success', 'Sleep log saved successfully.');
       router.back();
     } catch (err: any) {
       Alert.alert('Error', err.message);
@@ -89,43 +121,74 @@ export default function SleepLogScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <IconSymbol name="arrow.left" size={22} color="#687076" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Sleeping Log</Text>
+        <View style={styles.headerTitleRow}>
+          <IconSymbol name="moon.fill" size={22} color="#687076" />
+          <Text style={styles.headerTitle}>Sleeping Log</Text>
+        </View>
         <View style={{ width: 22 }} />
       </View>
 
       {/* Start Time */}
       <Text style={styles.label}>Start Time</Text>
-      <View style={styles.inputRow}>
+      <View style={styles.timeRow}>
         <TouchableOpacity style={styles.timeInput} onPress={() => showPicker('start-time')}>
           <Text style={styles.inputText}>{formatTime(startTime)}</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => showPicker('start-date')}>
-          <IconSymbol name="calendar" size={20} color="#687076" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.timeInput} onPress={() => showPicker('start-date')}>
+        <IconSymbol name="clock" size={18} color="#687076" />
+        <TouchableOpacity style={styles.dateInput} onPress={() => showPicker('start-date')}>
           <Text style={styles.inputText}>{formatDate(startTime)}</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => showPicker('start-time')}>
-          <IconSymbol name="clock" size={20} color="#687076" />
-        </TouchableOpacity>
+        <IconSymbol name="calendar" size={18} color="#687076" />
       </View>
+
+      {/* Show Start Picker */}
+      {pickerMode === 'start-time' && (
+        <DateTimePicker
+          value={startTime}
+          mode="time"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={handlePickerChange}
+        />
+      )}
+      {pickerMode === 'start-date' && (
+        <DateTimePicker
+          value={startTime}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={handlePickerChange}
+        />
+      )}
 
       {/* End Time */}
       <Text style={styles.label}>End Time</Text>
-      <View style={styles.inputRow}>
+      <View style={styles.timeRow}>
         <TouchableOpacity style={styles.timeInput} onPress={() => showPicker('end-time')}>
           <Text style={styles.inputText}>{formatTime(endTime)}</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => showPicker('end-date')}>
-          <IconSymbol name="calendar" size={20} color="#687076" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.timeInput} onPress={() => showPicker('end-date')}>
+        <IconSymbol name="clock" size={18} color="#687076" />
+        <TouchableOpacity style={styles.dateInput} onPress={() => showPicker('end-date')}>
           <Text style={styles.inputText}>{formatDate(endTime)}</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => showPicker('end-time')}>
-          <IconSymbol name="clock" size={20} color="#687076" />
-        </TouchableOpacity>
+        <IconSymbol name="calendar" size={18} color="#687076" />
       </View>
+
+      {/* Show End Picker */}
+      {pickerMode === 'end-time' && (
+        <DateTimePicker
+          value={endTime}
+          mode="time"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={handlePickerChange}
+        />
+      )}
+      {pickerMode === 'end-date' && (
+        <DateTimePicker
+          value={endTime}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={handlePickerChange}
+        />
+      )}
 
       {/* Type */}
       <Text style={styles.label}>Type of Sleep</Text>
@@ -175,7 +238,7 @@ export default function SleepLogScreen() {
         style={styles.notesInput}
         value={notes}
         onChangeText={setNotes}
-        placeholder="Add any notes about this feeding..."
+        placeholder="Add any notes about this sleep..."
         multiline
       />
 
@@ -183,38 +246,73 @@ export default function SleepLogScreen() {
       <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
         <Text style={styles.saveBtnText}>Save</Text>
       </TouchableOpacity>
-
-      {pickerMode && (
-        <DateTimePicker
-          value={
-            pickerMode.startsWith('start')
-              ? startTime
-              : endTime
-          }
-          mode={pickerMode.includes('time') ? 'time' : 'date'}
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={handlePickerChange}
-        />
-      )}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { padding: 20, backgroundColor: '#fff', flexGrow: 1 },
-  header: { flexDirection: 'row', paddingTop: 44, alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#11181C' },
+  header: {
+    flexDirection: 'row',
+    paddingTop: 44,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  headerTitleRow: { flexDirection: 'row', alignItems: 'center' },
+  headerTitle: { fontSize: 20, fontWeight: 'bold', marginLeft: 8, color: '#11181C' },
   label: { fontSize: 15, fontWeight: '500', marginTop: 18, marginBottom: 8, color: '#11181C' },
-  inputRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  timeInput: { flex: 1, backgroundColor: '#F7F8F9', borderRadius: 8, padding: 12 },
+
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  timeInput: {
+    width: 100,
+    backgroundColor: '#F7F8F9',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 15,
+    color: '#11181C'
+  },
+  dateInput: {
+    width: 110,
+    backgroundColor: '#F7F8F9',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 15,
+    color: '#11181C',
+  },
   inputText: { fontSize: 15, color: '#11181C' },
+
   row: { flexDirection: 'row', gap: 12 },
-  selectBtn: { flex: 1, paddingVertical: 12, borderRadius: 10, backgroundColor: '#F7F8F9', alignItems: 'center' },
+  selectBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: '#F7F8F9',
+    alignItems: 'center',
+  },
   selectBtnActive: { backgroundColor: '#11181C' },
   selectBtnText: { fontSize: 15, color: '#687076' },
   selectBtnTextActive: { color: '#fff', fontWeight: 'bold' },
-  gridRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  gridBtn: { flex: 1, minWidth: 90, alignItems: 'center', backgroundColor: '#F7F8F9', borderRadius: 8, paddingVertical: 12 },
+
+  gridRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 8,
+  },
+  gridBtn: {
+    flex: 1,
+    minWidth: 90,
+    alignItems: 'center',
+    backgroundColor: '#F7F8F9',
+    borderRadius: 8,
+    paddingVertical: 12,
+  },
   gridBtnActive: { backgroundColor: '#11181C' },
   gridBtnText: { fontSize: 15, color: '#687076' },
   gridBtnTextActive: { color: '#fff', fontWeight: 'bold' },
@@ -228,6 +326,13 @@ const styles = StyleSheet.create({
     minHeight: 60,
     marginBottom: 8,
   },
-  saveBtn: { backgroundColor: '#11181C', borderRadius: 10, paddingVertical: 14, alignItems: 'center', marginTop: 24 },
+
+  saveBtn: {
+    backgroundColor: '#11181C',
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 24,
+  },
   saveBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 });
