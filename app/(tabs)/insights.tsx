@@ -45,10 +45,23 @@ export default function InsightsScreen() {
     // Generate mock feeding data (count)
     const feedingData = Array(days).fill(0).map(() => Math.floor(6 + Math.random() * 4)); // Random 6-9
     // Generate mock diaper data
-    const diaperData = [
-      { name: 'Pee', count: Math.floor(days * 0.7), color: '#8FB89C', legendFontColor: '#7A867B', legendFontSize: 14 },
-      { name: 'Poop', count: Math.floor(days * 0.4), color: '#C5D7BD', legendFontColor: '#7A867B', legendFontSize: 14 },
-    ];
+   const diaperData = [
+  {
+    name: 'Pee',
+    count: Math.floor(days * 0.7),
+    color: '#E2C69D', // Tan Gold
+    legendFontColor: '#7A867B',
+    legendFontSize: 14,
+  },
+  {
+    name: 'Poop',
+    count: Math.floor(days * 0.4),
+    color: '#B59E8A', // Clay
+    legendFontColor: '#7A867B',
+    legendFontSize: 14,
+  },
+];
+
 
     return {
       sleep: { labels, data: sleepData },
@@ -60,17 +73,18 @@ export default function InsightsScreen() {
   const chartData = getChartData();
 
   const chartConfig = {
-    backgroundGradientFrom: '#E9F2EC',
-    backgroundGradientTo: '#E9F2EC',
-    decimalPlaces: 1,
-    color: (opacity = 1) => `rgba(143, 184, 156, ${opacity})`, // #8FB89C
-    labelColor: () => '#7A867B',
-    style: { borderRadius: 12 },
-    propsForDots: { r: '5', strokeWidth: '2', stroke: '#2D3A2E' },
-    propsForBackgroundLines: { stroke: '#C5D7BD' },
-    propsForLabels: { fontSize: 12, fontWeight: '500', paddingRight: 10 },
-    barPercentage: 0.7,
-  };
+  backgroundGradientFrom: '#F9F9F7', // Warm White
+  backgroundGradientTo: '#F9F9F7',   // Warm White
+  decimalPlaces: 1,
+  color: (opacity = 1) => `rgba(211, 191, 164, ${opacity})`, // Soft Sand (Line/Bar)
+  labelColor: () => '#7A867B', // Dove Grey
+  style: { borderRadius: 12 },
+  propsForDots: { r: '5', strokeWidth: '2', stroke: '#2D3A2E' }, // Dot Stroke
+  propsForBackgroundLines: { stroke: '#F5EDE1' }, // Beige Cream
+  propsForLabels: { fontSize: 12, fontWeight: '500', paddingRight: 10 },
+  barPercentage: 0.7,
+};
+
 
   // Calculate chart width based on range (wider for more days)
   const chartWidth = rangeType === '7days' ? Dimensions.get('window').width - 60 : (rangeType === '14days' ? Dimensions.get('window').width * 1.6 : Dimensions.get('window').width * 2.2);
@@ -276,24 +290,24 @@ export default function InsightsScreen() {
 }
 
 const styles = StyleSheet.create({
-  containerWrapper: { flex: 1, backgroundColor: '#F6F7F4' },
+  containerWrapper: { flex: 1, backgroundColor: '#F9F9F7' }, // Warm White
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 24,
     paddingTop: 64,
-    backgroundColor: '#F6F7F4',
+    backgroundColor: '#F9F9F7',
   },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#2D3A2E' },
   dropdownButton: {
     padding: 12,
     borderRadius: 12,
-    backgroundColor: '#E9F2EC',
+    backgroundColor: '#F5EDE1', // Beige Cream
   },
   container: {
     padding: 24,
-    backgroundColor: '#F6F7F4',
+    backgroundColor: '#F9F9F7',
     flexGrow: 1,
     paddingTop: 0,
     paddingBottom: 80,
@@ -364,14 +378,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   infoBox: {
-    backgroundColor: '#E9F2EC',
+    backgroundColor: '#F5EDE1', // Beige Cream
     borderRadius: 8,
     padding: 12,
     marginTop: 8,
   },
   infoText: { fontSize: 14, color: '#7A867B' },
   suggestionBox: {
-    backgroundColor: '#E9F2EC',
+    backgroundColor: '#F5EDE1', // Beige Cream
     borderRadius: 8,
     padding: 12,
     marginBottom: 8,
@@ -384,7 +398,7 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     flex: 1,
-    backgroundColor: '#E9F2EC',
+    backgroundColor: '#F5EDE1', // Beige Cream
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
@@ -406,7 +420,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     marginVertical: 4,
-    backgroundColor: '#E9F2EC',
+    backgroundColor: '#F5EDE1', // Beige Cream
   },
   dropdownItemText: { fontSize: 16, color: '#2D3A2E', fontWeight: '500' },
   pressed: { opacity: 0.7 },

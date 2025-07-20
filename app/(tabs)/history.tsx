@@ -181,7 +181,7 @@ function SummaryItem({ icon, label, count }: { icon: string; label: string; coun
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F6F7F4', paddingHorizontal: 0 },
+  container: { flex: 1, backgroundColor: '#F9F9F7', paddingHorizontal: 0 }, // Warm White
   dateNav: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -190,32 +190,35 @@ const styles = StyleSheet.create({
     marginTop: 72,
   },
   dateText: { fontSize: 16, fontWeight: 'bold', color: '#2D3A2E' },
+
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingVertical: 12,
-    backgroundColor: '#E9F2EC',
+    backgroundColor: '#F5EDE1', // Beige Cream
   },
   summaryItem: { alignItems: 'center', flex: 1 },
   summaryLabel: { fontSize: 13, color: '#7A867B', marginTop: 4 },
   summaryCount: { fontSize: 15, fontWeight: 'bold', color: '#2D3A2E', marginTop: 2 },
+
   tabsRow: { flexDirection: 'row', padding: 12, gap: 8 },
   tabBtn: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#E9F2EC',
+    backgroundColor: '#F5EDE1', // Beige Cream
     marginRight: 8,
   },
-  tabBtnActive: { backgroundColor: '#C5D7BD' },
+  tabBtnActive: { backgroundColor: '#E1D3C1' }, // Soft Sand
   tabBtnText: { color: '#7A867B', fontSize: 15 },
   tabBtnTextActive: { color: '#2D3A2E', fontWeight: 'bold' },
+
   listSection: { paddingHorizontal: 8, paddingBottom: 80 },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -228,6 +231,7 @@ const styles = StyleSheet.create({
   cardType: { fontSize: 15, fontWeight: 'bold', color: '#2D3A2E' },
   cardDetails: { fontSize: 13, color: '#7A867B', marginTop: 2 },
   cardTime: { fontSize: 15, color: '#7A867B', fontWeight: 'bold' },
+
   fab: {
     position: 'absolute',
     right: 24,
@@ -240,12 +244,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     elevation: 4,
   },
+
   modal: {
     justifyContent: 'center',
     margin: 0,
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 20,
     marginHorizontal: 20,
@@ -254,7 +259,7 @@ const styles = StyleSheet.create({
   closeButton: {
     marginTop: 16,
     padding: 10,
-    backgroundColor: '#E9F2EC',
+    backgroundColor: '#F5EDE1', // Beige Cream
     borderRadius: 8,
   },
   closeButtonText: {
