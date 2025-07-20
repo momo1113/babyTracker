@@ -8,11 +8,11 @@ app.use(express.json());
 
 // Import routes
 const feedingRoutes = require('./routes/feeding');
-const diaperRoutes = require('./routes/diaper'); // 👈 Add this line
+const diaperRoutes = require('./routes/diaper'); 
 
 // Register routes
 app.use('/feeding', feedingRoutes);
-app.use('/diaper', diaperRoutes); // 👈 Add this line
+app.use('/diaper', diaperRoutes); 
 
 app.listen(PORT, () => {
   console.log(`Backend API running on http://localhost:${PORT}`);

@@ -25,30 +25,28 @@ const handleSave = async () => {
     timestamp: new Date().toISOString(),
   };
 
+  const BASE_URL = 'http://192.168.1.9:3000';
   try {
-    // Use your backend server address here
-    const response = await fetch('http://localhost:3000/feeding/', {
+    const response = await fetch(`${BASE_URL}/feeding`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to save feeding log');
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to save feeding log');
     }
 
     const data = await response.json();
     console.log('Feeding log saved:', data);
-
-    // Navigate back or show success message
     router.back();
   } catch (error) {
-    console.error('Error saving feeding log:', error);
-    // Show alert or user feedback if needed
+    console.error('❌ Error saving feeding log:', error.message);
+    alert(error.message);
   }
 };
+
 
 
   return (
