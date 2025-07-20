@@ -2,7 +2,8 @@ const { z } = require('zod');
 
 const feedingLogs = [];
 
-const feedingSchema = z.object({
+// Base schema
+const baseSchema = z.object({
   feedingType: z.enum(['Breast', 'Bottle', 'Formula']),
   side: z.string().nullable(),
   amount: z.string().nullable(),
@@ -12,8 +13,37 @@ const feedingSchema = z.object({
   timestamp: z.string().refine(val => !isNaN(Date.parse(val)), { message: 'Invalid timestamp' }),
 });
 
+// Custom validation per feeding type
+const feedingSchema = baseSchema.superRefine((data, ctx) => {
+  if (data.feedingType === 'Breast') {
+    if (!data.side) {
+      ctx.addIssue({
+        path: ['side'],
+        code: z.ZodIssueCode.custom,
+        message: 'Side is required for Breast feeding',
+      });
+    }
+  } else {
+    if (!data.amount) {
+      ctx.addIssue({
+        path: ['amount'],
+        code: z.ZodIssueCode.custom,
+        message: 'Amount is required for Bottle or Formula feeding',
+      });
+    }
+    if (!data.unit) {
+      ctx.addIssue({
+        path: ['unit'],
+        code: z.ZodIssueCode.custom,
+        message: 'Unit is required for Bottle or Formula feeding',
+      });
+    }
+  }
+});
+
 function saveFeedingLog(req, res) {
-  console.log(req.body)
+  console.log(req.body);
+
   try {
     const parsed = feedingSchema.parse(req.body);
 

@@ -1,53 +1,74 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet, ScrollView } from 'react-native';
-import { IconSymbol } from '@/components/ui/IconSymbol';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  TextInput,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  Platform,
+} from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
+import { IconSymbol } from '@/components/ui/IconSymbol';
 
 export default function FeedingLogScreen() {
+  const router = useRouter();
   const [feedingType, setFeedingType] = useState('Breast');
   const [side, setSide] = useState('Left');
   const [amount, setAmount] = useState('');
   const [unit, setUnit] = useState('oz');
-  const [time, setTime] = useState('12:30 PM');
-  const [date, setDate] = useState('01/15/2025');
   const [duration, setDuration] = useState('15');
   const [notes, setNotes] = useState('');
-  const router = useRouter();
 
-const handleSave = async () => {
-  const payload = {
-    feedingType,
-    side: feedingType === 'Breast' ? side : null,
-    amount: feedingType !== 'Breast' ? amount : null,
-    unit: feedingType !== 'Breast' ? unit : null,
-    duration,
-    notes,
-    timestamp: new Date().toISOString(),
-  };
+  const [dateTime, setDateTime] = useState(new Date());
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
-  const BASE_URL = 'http://192.168.1.9:3000';
-  try {
-    const response = await fetch(`${BASE_URL}/feeding`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+  const formatTime = (date: Date) =>
+    date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const formatDate = (date: Date) =>
+    date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to save feeding log');
+  const handleSave = async () => {
+    if ((feedingType === 'Bottle' || feedingType === 'Formula') && !amount) {
+      Alert.alert('Validation Error', 'Amount is required for Bottle or Formula feeding');
+      return;
     }
 
-    const data = await response.json();
-    console.log('Feeding log saved:', data);
-    router.back();
-  } catch (error) {
-    console.error('❌ Error saving feeding log:', error.message);
-    alert(error.message);
-  }
-};
+    const payload = {
+      feedingType,
+      side: feedingType === 'Breast' ? side : null,
+      amount: feedingType !== 'Breast' ? amount : null,
+      unit: feedingType !== 'Breast' ? unit : null,
+      duration,
+      notes,
+      timestamp: dateTime.toISOString(),
+    };
 
+    const BASE_URL = 'http://192.168.1.9:3000';
 
+    try {
+      const response = await fetch(`${BASE_URL}/feeding`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save feeding log');
+      }
+
+      const data = await response.json();
+      console.log('Feeding log saved:', data);
+      router.back();
+    } catch (error) {
+      console.error('❌ Error:', error);
+      Alert.alert('Error', error.message || 'Something went wrong');
+    }
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -127,14 +148,50 @@ const handleSave = async () => {
           </View>
         </>
       )}
-      {/* Time */}
+
+      {/* Time + Date Picker */}
       <Text style={styles.label}>Time</Text>
       <View style={styles.timeRow}>
-        <TextInput style={styles.timeInput} value={time} onChangeText={setTime} />
+        <TouchableOpacity
+          style={styles.timeInput}
+          onPress={() => setShowTimePicker(true)}
+        >
+          <Text style={styles.inputText}>{formatTime(dateTime)}</Text>
+        </TouchableOpacity>
         <IconSymbol name="clock" size={18} color="#687076" />
-        <TextInput style={styles.dateInput} value={date} onChangeText={setDate} />
+
+        <TouchableOpacity
+          style={styles.dateInput}
+          onPress={() => setShowDatePicker(true)}
+        >
+          <Text style={styles.inputText}>{formatDate(dateTime)}</Text>
+        </TouchableOpacity>
         <IconSymbol name="calendar" size={18} color="#687076" />
       </View>
+
+      {showTimePicker && (
+        <DateTimePicker
+          value={dateTime}
+          mode="time"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={(event, selectedDate) => {
+            setShowTimePicker(false);
+            if (selectedDate) setDateTime(prev => new Date(prev.setHours(selectedDate.getHours(), selectedDate.getMinutes())));
+          }}
+        />
+      )}
+
+      {showDatePicker && (
+        <DateTimePicker
+          value={dateTime}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={(event, selectedDate) => {
+            setShowDatePicker(false);
+            if (selectedDate) setDateTime(prev => new Date(selectedDate.setHours(prev.getHours(), prev.getMinutes())));
+          }}
+        />
+      )}
 
       {/* Duration */}
       <Text style={styles.label}>Duration</Text>
@@ -264,4 +321,5 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   saveBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  inputText: { fontSize: 15, color: '#11181C' }
 });
