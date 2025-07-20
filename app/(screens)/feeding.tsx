@@ -100,7 +100,7 @@ export default function FeedingLogScreen() {
         Alert.alert('Success', 'Feeding log saved successfully!');
       }
 
-      router.back();
+      router.push('/home');
     } catch (error: any) {
       console.error('❌ Error:', error);
       Alert.alert('Error', error.message || 'Something went wrong');

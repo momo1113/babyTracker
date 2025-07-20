@@ -1,8 +1,7 @@
 const { z } = require('zod');
+const { db } = require('../firebaseAdmin'); // import your Firestore instance
 
-const feedingLogs = [];
 
-// Base schema
 const baseSchema = z.object({
   feedingType: z.enum(['Breast', 'Bottle', 'Formula']),
   side: z.string().nullable(),
@@ -13,7 +12,6 @@ const baseSchema = z.object({
   timestamp: z.string().refine(val => !isNaN(Date.parse(val)), { message: 'Invalid timestamp' }),
 });
 
-// Custom validation per feeding type
 const feedingSchema = baseSchema.superRefine((data, ctx) => {
   if (data.feedingType === 'Breast') {
     if (!data.side) {
@@ -41,27 +39,34 @@ const feedingSchema = baseSchema.superRefine((data, ctx) => {
   }
 });
 
-function saveFeedingLog(req, res) {
-  console.log(req.body);
-
+async function saveFeedingLog(req, res) {
   try {
     const parsed = feedingSchema.parse(req.body);
 
-    const entry = {
-      id: feedingLogs.length + 1,
-      ...parsed,
-    };
+    // Save to Firestore
+    const docRef = await db.collection('feedingLogs').add(parsed);
 
-    feedingLogs.push(entry);
-    return res.status(201).json({ message: 'Feeding log saved', data: entry });
+    return res.status(201).json({ message: 'Feeding log saved', id: docRef.id });
   } catch (error) {
     console.error(error);
-    return res.status(400).json({ error: error.errors?.[0]?.message || 'Validation failed' });
+    // if validation error from zod
+    if (error.errors) {
+      return res.status(400).json({ error: error.errors[0].message });
+    }
+    // else Firestore or other errors
+    return res.status(500).json({ error: error.message || 'Internal server error' });
   }
 }
 
-function getFeedingLogs(req, res) {
-  res.json(feedingLogs);
+async function getFeedingLogs(req, res) {
+  try {
+    const snapshot = await db.collection('feedingLogs').get();
+    const logs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    res.json(logs);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch feeding logs' });
+  }
 }
 
 module.exports = {
