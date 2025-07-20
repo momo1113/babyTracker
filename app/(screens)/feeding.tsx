@@ -22,23 +22,39 @@ export default function FeedingLogScreen() {
   const [unit, setUnit] = useState('oz');
   const [duration, setDuration] = useState('15');
   const [notes, setNotes] = useState('');
-
   const [dateTime, setDateTime] = useState(new Date());
-  const [showTimePicker, setShowTimePicker] = useState(false);
-  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [pickerMode, setPickerMode] = useState<'date' | 'time'>('time');
 
   const formatTime = (date: Date) =>
     date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const formatDate = (date: Date) =>
-    date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+    date.toLocaleDateString('en-US', {
+      month: '2-digit',
+      day: '2-digit',
+      year: 'numeric',
+    });
 
-  const showTime = () => {
-    setShowDatePicker(false);
-    setShowTimePicker(true);
+  const showPicker = (mode: 'time' | 'date') => {
+    setPickerMode(mode);
+    setPickerVisible(true);
   };
-  const showDate = () => {
-    setShowTimePicker(false);
-    setShowDatePicker(true);
+
+  const handlePickerChange = (_event: any, selectedDate: Date | undefined) => {
+    if (selectedDate) {
+      const newDate = new Date(dateTime);
+      if (pickerMode === 'time') {
+        newDate.setHours(selectedDate.getHours());
+        newDate.setMinutes(selectedDate.getMinutes());
+      } else {
+        newDate.setFullYear(selectedDate.getFullYear());
+        newDate.setMonth(selectedDate.getMonth());
+        newDate.setDate(selectedDate.getDate());
+      }
+      setDateTime(newDate);
+    }
+    setPickerVisible(false);
   };
 
   const handleSave = async () => {
@@ -83,6 +99,7 @@ export default function FeedingLogScreen() {
       } else {
         Alert.alert('Success', 'Feeding log saved successfully!');
       }
+
       router.back();
     } catch (error: any) {
       console.error('❌ Error:', error);
@@ -97,10 +114,7 @@ export default function FeedingLogScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <IconSymbol name="arrow.left" size={22} color="#687076" />
         </TouchableOpacity>
-        <View style={styles.headerTitleRow}>
-          <IconSymbol name="drop.fill" size={22} color="#687076" />
-          <Text style={styles.headerTitle}>Feeding Log</Text>
-        </View>
+        <Text style={styles.headerTitle}>Feeding Log</Text>
         <View style={{ width: 22 }} />
       </View>
 
@@ -172,50 +186,27 @@ export default function FeedingLogScreen() {
       {/* Time + Date Picker */}
       <Text style={styles.label}>Time</Text>
       <View style={styles.timeRow}>
-        <TouchableOpacity
-          style={styles.timeInput}
-          onPress={showTime}
-        >
+        <TouchableOpacity style={styles.timeInput} onPress={() => showPicker('time')}>
           <Text style={styles.inputText}>{formatTime(dateTime)}</Text>
         </TouchableOpacity>
         <IconSymbol name="clock" size={18} color="#687076" />
-
-        <TouchableOpacity
-          style={styles.dateInput}
-          onPress={showDate}
-        >
+        <TouchableOpacity style={styles.dateInput} onPress={() => showPicker('date')}>
           <Text style={styles.inputText}>{formatDate(dateTime)}</Text>
         </TouchableOpacity>
         <IconSymbol name="calendar" size={18} color="#687076" />
       </View>
 
-      {showTimePicker && (
-        <DateTimePicker
-          value={dateTime}
-          mode="time"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={(event, selectedDate) => {
-            setShowTimePicker(false);
-            if (selectedDate) {
-              setDateTime(prev => new Date(prev.setHours(selectedDate.getHours(), selectedDate.getMinutes())));
-            }
-          }}
-        />
-      )}
-
-      {showDatePicker && (
-        <DateTimePicker
-          value={dateTime}
-          mode="date"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={(event, selectedDate) => {
-            setShowDatePicker(false);
-            if (selectedDate) {
-              setDateTime(prev => new Date(selectedDate.setHours(prev.getHours(), prev.getMinutes())));
-            }
-          }}
-        />
-      )}
+      {/* Shared DateTime Picker (fixed height to avoid flicker) */}
+      <View style={{ height: pickerVisible ? 220 : 0, overflow: 'hidden' }}>
+        {pickerVisible && (
+          <DateTimePicker
+            value={dateTime}
+            mode={pickerMode}
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={handlePickerChange}
+          />
+        )}
+      </View>
 
       {/* Duration */}
       <Text style={styles.label}>Duration</Text>
@@ -253,7 +244,6 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#fff',
     flexGrow: 1,
-    justifyContent: 'flex-start',
   },
   header: {
     paddingTop: 44,
@@ -262,30 +252,29 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 16,
   },
-  headerTitleRow: { flexDirection: 'row', alignItems: 'center' },
-  headerTitle: { fontSize: 20, fontWeight: 'bold', marginLeft: 8, color: '#11181C' },
-
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#11181C',
+  },
   label: { fontSize: 15, fontWeight: '500', marginTop: 18, marginBottom: 8, color: '#11181C' },
 
   row: { flexDirection: 'row', gap: 8, marginBottom: 8, alignItems: 'center' },
-
   timeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   timeInput: {
     width: 100,
     backgroundColor: '#F7F8F9',
     borderRadius: 8,
     padding: 12,
-    fontSize: 15,
-    color: '#11181C',
   },
   dateInput: {
     width: 110,
     backgroundColor: '#F7F8F9',
     borderRadius: 8,
     padding: 12,
-    fontSize: 15,
-    color: '#11181C',
   },
+  inputText: { fontSize: 15, color: '#11181C' },
+
   selectBtn: {
     flex: 1,
     flexDirection: 'row',
@@ -306,7 +295,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 15,
-    color: '#11181C',
   },
   unitBtn: {
     backgroundColor: '#F7F8F9',
@@ -322,7 +310,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 15,
-    color: '#11181C',
   },
   durationText: { fontSize: 15, color: '#687076' },
 
@@ -331,7 +318,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 15,
-    color: '#11181C',
     minHeight: 60,
     marginBottom: 8,
   },
@@ -345,5 +331,4 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   saveBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  inputText: { fontSize: 15, color: '#11181C' },
 });
