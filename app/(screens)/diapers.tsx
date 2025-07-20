@@ -95,7 +95,7 @@ export default function DiaperLogScreen() {
             onPress={() => onSelectType(t)}
           >
             <IconSymbol
-              name={t === 'Pee' ? 'drop.fill' : t === 'Poop' ? 'leaf.fill' : 'circle'}
+              name={t === 'Pee' ? 'water.waves' : t === 'Poop' ? 'leaf.fill' : 'circle'}
               size={18}
               color={type === t ? '#fff' : '#687076'}
             />
