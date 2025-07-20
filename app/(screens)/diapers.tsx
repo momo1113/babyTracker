@@ -30,9 +30,10 @@ export default function DiaperLogScreen() {
     payload.consistency = consistency;
     payload.color = color;
   }
+  const BASE_URL = 'http://192.168.1.9:3000'; // replace with your actual computer IP
 
   try {
-    const response = await fetch('http://localhost:3000/diaper', {
+    const response = await fetch(`${BASE_URL}/diaper`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
