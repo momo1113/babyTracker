@@ -8,13 +8,13 @@ export default function DiaperLogScreen() {
   const router = useRouter();
 
   const [type, setType] = useState('Pee');
-  const [time, setTime] = useState('12:30 PM');
-  const [date, setDate] = useState('01/15/2025');
+  const [time, setTime] = useState(formatTime(new Date()));
+  const [date, setDate] = useState(formatDate(new Date()));
   const [consistency, setConsistency] = useState('');
   const [color, setColor] = useState('');
   const [notes, setNotes] = useState('');
-  const [showTimePicker, setShowTimePicker] = useState(false);
-  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const [pickerMode, setPickerMode] = useState<'time' | 'date' | null>(null);
 
   const handleSave = async () => {
     const payload = {
@@ -25,15 +25,13 @@ export default function DiaperLogScreen() {
       timestamp: new Date().toISOString(),
     };
 
-    // Only include consistency and color if type is Poop or Both
     if (type !== 'Pee') {
       payload.consistency = consistency;
       payload.color = color;
     }
-    const BASE_URL = 'http://192.168.1.9:3000'; // replace with your actual computer IP
 
     try {
-      const response = await fetch(`${BASE_URL}/diaper`, {
+      const response = await fetch('http://192.168.1.9:3000/diaper', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -41,7 +39,6 @@ export default function DiaperLogScreen() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Save failed:', errorData);
         alert(`Error: ${errorData.error || 'Save failed'}`);
         return;
       }
@@ -63,19 +60,18 @@ export default function DiaperLogScreen() {
     }
   };
 
-  const formatTime = (selectedDate) => {
-    const hours = selectedDate.getHours();
-    const minutes = selectedDate.getMinutes();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const formattedTime = `${((hours + 11) % 12 + 1)}:${String(minutes).padStart(2, '0')} ${ampm}`;
-    return formattedTime;
-  };
+  const handlePickerChange = (event, selectedDate) => {
+    if (!selectedDate) {
+      setPickerMode(null);
+      return;
+    }
 
-  const formatDate = (selectedDate) => {
-    const month = selectedDate.getMonth() + 1;
-    const day = selectedDate.getDate();
-    const year = selectedDate.getFullYear();
-    return `${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')}/${year}`;
+    if (pickerMode === 'time') {
+      setTime(formatTime(selectedDate));
+    } else {
+      setDate(formatDate(selectedDate));
+    }
+    setPickerMode(null);
   };
 
   return (
@@ -85,10 +81,7 @@ export default function DiaperLogScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <IconSymbol name="chevron.backward" size={22} color="#687076" />
         </TouchableOpacity>
-          <View style={styles.headerTitleRow}>
-            <IconSymbol name="bandage.fill" size={22} color="#687076" />
-            <Text style={styles.headerTitle}>Diaper Log</Text>
-          </View>
+        <Text style={styles.headerTitle}>Diaper Log</Text>
         <View style={{ width: 22 }} />
       </View>
 
@@ -102,9 +95,7 @@ export default function DiaperLogScreen() {
             onPress={() => onSelectType(t)}
           >
             <IconSymbol
-              name={
-                t === 'Pee' ? 'drop.fill' : t === 'Poop' ? 'leaf.fill' : 'circle'
-              }
+              name={t === 'Pee' ? 'drop.fill' : t === 'Poop' ? 'leaf.fill' : 'circle'}
               size={18}
               color={type === t ? '#fff' : '#687076'}
             />
@@ -118,68 +109,28 @@ export default function DiaperLogScreen() {
       {/* Time + Date Picker */}
       <Text style={styles.label}>Time</Text>
       <View style={styles.timeRow}>
-        <TouchableOpacity
-          onPress={() => {
-            setShowTimePicker(true);
-            setShowDatePicker(false);
-          }}
-          style={styles.timeInput}
-        >
-          <Text style={{ color: '#11181C' }}>{time || 'Select time'}</Text>
+        <TouchableOpacity onPress={() => setPickerMode('time')} style={styles.timeInput}>
+          <Text style={{ color: '#11181C' }}>{time}</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => {
-            setShowTimePicker(true);
-            setShowDatePicker(false);
-          }}
-        >
-          <IconSymbol name="clock" size={18} color="#687076" />
+        <IconSymbol name="clock" size={18} color="#687076" />
+        <TouchableOpacity onPress={() => setPickerMode('date')} style={styles.dateInput}>
+          <Text style={{ color: '#11181C' }}>{date}</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => {
-            setShowDatePicker(true);
-            setShowTimePicker(false);
-          }}
-          style={styles.dateInput}
-        >
-          <Text style={{ color: '#11181C' }}>{date || 'Select date'}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => {
-            setShowDatePicker(true);
-            setShowTimePicker(false);
-          }}
-        >
-          <IconSymbol name="calendar" size={18} color="#687076" />
-        </TouchableOpacity>
+        <IconSymbol name="calendar" size={18} color="#687076" />
       </View>
 
-      {showTimePicker && (
-        <DateTimePicker
-          value={new Date()}
-          mode="time"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={(event, selectedDate) => {
-            setShowTimePicker(false);
-            if (selectedDate) setTime(formatTime(selectedDate));
-          }}
-          style={{ marginTop: 8 }}
-        />
-      )}
-
-      {showDatePicker && (
-        <DateTimePicker
-          value={new Date()}
-          mode="date"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={(event, selectedDate) => {
-            setShowDatePicker(false);
-            if (selectedDate) setDate(formatDate(selectedDate));
-          }}
-          style={{ marginTop: 8 }}
-        />
-      )}
+      {/* Picker below inputs */}
+      <View style={{ minHeight: pickerMode ? 200 : 0 }}>
+        {pickerMode && (
+          <DateTimePicker
+            value={new Date()}
+            mode={pickerMode}
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={handlePickerChange}
+            style={{ flex: 1 }}
+          />
+        )}
+      </View>
 
       {/* Consistency (Poop only) */}
       <Text style={styles.label}>Consistency (Poop)</Text>
@@ -253,12 +204,25 @@ export default function DiaperLogScreen() {
   );
 }
 
+function formatTime(date) {
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  return `${((hours + 11) % 12 + 1)}:${String(minutes).padStart(2, '0')} ${ampm}`;
+}
+
+function formatDate(date) {
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const year = date.getFullYear();
+  return `${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')}/${year}`;
+}
+
 const styles = StyleSheet.create({
-   container: {
+  container: {
     padding: 20,
     backgroundColor: '#fff',
     flexGrow: 1,
-    justifyContent: 'flex-start',
   },
   header: {
     flexDirection: 'row',
@@ -267,7 +231,6 @@ const styles = StyleSheet.create({
     paddingTop: 44,
     marginBottom: 16,
   },
-  headerTitleRow: { flexDirection: 'row', alignItems: 'center' },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
