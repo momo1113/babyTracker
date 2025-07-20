@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView, Platform, Alert,
+  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Platform, Alert,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
@@ -15,6 +15,7 @@ export default function SleepLogScreen() {
   const [quality, setQuality] = useState('');
 
   const [pickerMode, setPickerMode] = useState<'start-time' | 'start-date' | 'end-time' | 'end-date' | null>(null);
+  const [notes, setNotes] = useState('');
 
   const showPicker = (mode: typeof pickerMode) => {
     setPickerMode(mode);
@@ -168,6 +169,16 @@ export default function SleepLogScreen() {
         ))}
       </View>
 
+      {/* Notes */}
+      <Text style={styles.label}>Notes (Optional)</Text>
+      <TextInput
+        style={styles.notesInput}
+        value={notes}
+        onChangeText={setNotes}
+        placeholder="Add any notes about this feeding..."
+        multiline
+      />
+
       {/* Save */}
       <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
         <Text style={styles.saveBtnText}>Save</Text>
@@ -207,6 +218,16 @@ const styles = StyleSheet.create({
   gridBtnActive: { backgroundColor: '#11181C' },
   gridBtnText: { fontSize: 15, color: '#687076' },
   gridBtnTextActive: { color: '#fff', fontWeight: 'bold' },
+
+  notesInput: {
+    backgroundColor: '#F7F8F9',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 15,
+    color: '#11181C',
+    minHeight: 60,
+    marginBottom: 8,
+  },
   saveBtn: { backgroundColor: '#11181C', borderRadius: 10, paddingVertical: 14, alignItems: 'center', marginTop: 24 },
   saveBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 });
