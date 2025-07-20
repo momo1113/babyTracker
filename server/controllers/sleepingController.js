@@ -1,6 +1,5 @@
 const { z } = require('zod');
-
-const sleepLogs = [];
+const { db } = require('../firebaseAdmin');  // import Firestore instance
 
 const sleepSchema = z.object({
   startTime: z.string().refine(val => !isNaN(Date.parse(val)), 'Invalid start time'),
@@ -11,22 +10,34 @@ const sleepSchema = z.object({
   timestamp: z.string().refine(val => !isNaN(Date.parse(val)), 'Invalid timestamp'),
 });
 
-function saveSleepLog(req, res) {
+async function saveSleepLog(req, res) {
   try {
     const parsed = sleepSchema.parse(req.body);
-    const entry = {
-      id: sleepLogs.length + 1,
-      ...parsed,
-    };
-    sleepLogs.push(entry);
-    return res.status(201).json({ message: 'Sleep log saved', data: entry });
+
+    // Save to Firestore in "sleepLogs" collection
+    const docRef = await db.collection('sleepLogs').add(parsed);
+
+    return res.status(201).json({
+      message: 'Sleep log saved',
+      id: docRef.id,
+      data: parsed,
+    });
   } catch (err) {
     return res.status(400).json({ error: err.errors?.[0]?.message || 'Validation failed' });
   }
 }
 
-function getSleepLogs(req, res) {
-  res.json(sleepLogs);
+async function getSleepLogs(req, res) {
+  try {
+    const snapshot = await db.collection('sleepLogs').get();
+    const logs = [];
+    snapshot.forEach(doc => {
+      logs.push({ id: doc.id, ...doc.data() });
+    });
+    res.json(logs);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch sleep logs' });
+  }
 }
 
 module.exports = {
