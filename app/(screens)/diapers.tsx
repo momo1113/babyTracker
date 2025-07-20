@@ -17,43 +17,43 @@ export default function DiaperLogScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   const handleSave = async () => {
-  const payload = {
-    type,
-    time,
-    date,
-    notes,
-    timestamp: new Date().toISOString(),
-  };
+    const payload = {
+      type,
+      time,
+      date,
+      notes,
+      timestamp: new Date().toISOString(),
+    };
 
-  // Only include consistency and color if type is Poop or Both
-  if (type !== 'Pee') {
-    payload.consistency = consistency;
-    payload.color = color;
-  }
-  const BASE_URL = 'http://192.168.1.9:3000'; // replace with your actual computer IP
-
-  try {
-    const response = await fetch(`${BASE_URL}/diaper`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Save failed:', errorData);
-      alert(`Error: ${errorData.error || 'Save failed'}`);
-      return;
+    // Only include consistency and color if type is Poop or Both
+    if (type !== 'Pee') {
+      payload.consistency = consistency;
+      payload.color = color;
     }
+    const BASE_URL = 'http://192.168.1.9:3000'; // replace with your actual computer IP
 
-    const data = await response.json();
-    console.log('Save successful:', data);
-    router.back();
-  } catch (error) {
-    console.error('Network error:', error);
-    alert('Network error, please try again.');
-  }
-};
+    try {
+      const response = await fetch(`${BASE_URL}/diaper`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Save failed:', errorData);
+        alert(`Error: ${errorData.error || 'Save failed'}`);
+        return;
+      }
+
+      const data = await response.json();
+      console.log('Save successful:', data);
+      router.back();
+    } catch (error) {
+      console.error('Network error:', error);
+      alert('Network error, please try again.');
+    }
+  };
 
   const onSelectType = (t) => {
     setType(t);
@@ -85,7 +85,10 @@ export default function DiaperLogScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <IconSymbol name="chevron.backward" size={22} color="#687076" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Diaper Log</Text>
+          <View style={styles.headerTitleRow}>
+            <IconSymbol name="bandage.fill" size={22} color="#687076" />
+            <Text style={styles.headerTitle}>Diaper Log</Text>
+          </View>
         <View style={{ width: 22 }} />
       </View>
 
@@ -115,14 +118,41 @@ export default function DiaperLogScreen() {
       {/* Time + Date Picker */}
       <Text style={styles.label}>Time</Text>
       <View style={styles.timeRow}>
-        <TouchableOpacity onPress={() => setShowTimePicker(true)} style={styles.timeInput}>
+        <TouchableOpacity
+          onPress={() => {
+            setShowTimePicker(true);
+            setShowDatePicker(false);
+          }}
+          style={styles.timeInput}
+        >
           <Text style={{ color: '#11181C' }}>{time || 'Select time'}</Text>
         </TouchableOpacity>
-        <IconSymbol name="clock" size={18} color="#687076" />
-        <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.dateInput}>
+        <TouchableOpacity
+          onPress={() => {
+            setShowTimePicker(true);
+            setShowDatePicker(false);
+          }}
+        >
+          <IconSymbol name="clock" size={18} color="#687076" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => {
+            setShowDatePicker(true);
+            setShowTimePicker(false);
+          }}
+          style={styles.dateInput}
+        >
           <Text style={{ color: '#11181C' }}>{date || 'Select date'}</Text>
         </TouchableOpacity>
-        <IconSymbol name="calendar" size={18} color="#687076" />
+        <TouchableOpacity
+          onPress={() => {
+            setShowDatePicker(true);
+            setShowTimePicker(false);
+          }}
+        >
+          <IconSymbol name="calendar" size={18} color="#687076" />
+        </TouchableOpacity>
       </View>
 
       {showTimePicker && (
@@ -134,6 +164,7 @@ export default function DiaperLogScreen() {
             setShowTimePicker(false);
             if (selectedDate) setTime(formatTime(selectedDate));
           }}
+          style={{ marginTop: 8 }}
         />
       )}
 
@@ -146,6 +177,7 @@ export default function DiaperLogScreen() {
             setShowDatePicker(false);
             if (selectedDate) setDate(formatDate(selectedDate));
           }}
+          style={{ marginTop: 8 }}
         />
       )}
 
@@ -235,6 +267,7 @@ const styles = StyleSheet.create({
     paddingTop: 44,
     marginBottom: 16,
   },
+  headerTitleRow: { flexDirection: 'row', alignItems: 'center' },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
