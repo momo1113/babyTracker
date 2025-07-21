@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,16 +9,64 @@ import {
   Linking,
   Modal,
   Pressable,
+  ActivityIndicator,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native'; // make sure react-navigation/native is installed
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useRouter } from 'expo-router';
+
+function calculateAge(dobStr: string) {
+  if (!dobStr) return '';
+  const dob = new Date(dobStr);
+  const now = new Date();
+  let years = now.getFullYear() - dob.getFullYear();
+  let months = now.getMonth() - dob.getMonth();
+  let days = now.getDate() - dob.getDate();
+
+  if (days < 0) {
+    months--;
+    days += new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+  }
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
+
+  let ageStr = '';
+  if (years > 0) ageStr += `${years} year${years > 1 ? 's' : ''}, `;
+  if (months > 0) ageStr += `${months} month${months > 1 ? 's' : ''}, `;
+  ageStr += `${days} day${days !== 1 ? 's' : ''} old`;
+  return ageStr;
+}
 
 export default function ProfileScreen() {
   const router = useRouter();
   const [rateModalVisible, setRateModalVisible] = useState(false);
   const [rating, setRating] = useState(0);
+  const [babyProfile, setBabyProfile] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  // Open default email app with predefined email address
+  const fetchBabyProfile = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('http://192.168.1.9:3000/baby-profile'); // Replace with your real API
+      if (!response.ok) throw new Error('Failed to fetch baby profile');
+      const json = await response.json();
+      setBabyProfile(json.data);
+    } catch (error) {
+      alert('Error loading baby profile');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchBabyProfile();
+    }, [])
+  );
+
   const openEmail = () => {
     const email = 'support@example.com';
     const subject = 'App Support Request';
@@ -28,21 +76,23 @@ export default function ProfileScreen() {
     });
   };
 
-  // Handle logout: navigate to login page
   const handleLogout = () => {
-    // You can clear auth tokens here if any
-    router.push('/auth/login'); // Replace current screen with login screen
+    router.push('/auth/login');
   };
 
-  // Handle rating star press
   const onStarPress = (star: number) => setRating(star);
 
-  // Submit rating (can extend to send to backend)
   const submitRating = () => {
     alert(`Thanks for rating us ${rating} star${rating > 1 ? 's' : ''}!`);
     setRateModalVisible(false);
     setRating(0);
   };
+
+  // Get latest growth data (last item in growthData array)
+  const latestGrowth =
+    babyProfile?.growthData && babyProfile.growthData.length > 0
+      ? babyProfile.growthData[babyProfile.growthData.length - 1]
+      : null;
 
   return (
     <>
@@ -60,28 +110,46 @@ export default function ProfileScreen() {
               <Text style={styles.editText}>Edit</Text>
             </TouchableOpacity>
           </View>
-          <View style={styles.profileRow}>
-            <Image
-              source={{ uri: 'https://randomuser.me/api/portraits/med/baby/1.jpg' }}
-              style={styles.avatar}
-            />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.name}>Emma</Text>
-              <Text style={styles.subText}>4 months, 5 days old</Text>
-            </View>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Date of Birth</Text>
-            <Text style={styles.infoValue}>March 12, 2025</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Age</Text>
-            <Text style={styles.infoValue}>4 months, 5 days</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Gender</Text>
-            <Text style={styles.infoValue}>Female</Text>
-          </View>
+
+          {loading ? (
+            <ActivityIndicator size="large" color="#3B322C" />
+          ) : babyProfile ? (
+            <>
+              <View style={styles.profileRow}>
+                <Image
+                  source={{ uri: 'https://randomuser.me/api/portraits/med/baby/1.jpg' }}
+                  style={styles.avatar}
+                />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.name}>Baby</Text>
+                  <Text style={styles.subText}>{calculateAge(babyProfile.dob)}</Text>
+                </View>
+              </View>
+
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Date of Birth</Text>
+                <Text style={styles.infoValue}>
+                  {new Date(babyProfile.dob).toLocaleDateString(undefined, {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </Text>
+              </View>
+
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Age</Text>
+                <Text style={styles.infoValue}>{calculateAge(babyProfile.dob)}</Text>
+              </View>
+
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Gender</Text>
+                <Text style={styles.infoValue}>{babyProfile.gender}</Text>
+              </View>
+            </>
+          ) : (
+            <Text style={{ color: '#867E76' }}>No baby profile found.</Text>
+          )}
         </View>
 
         {/* Latest Growth Section */}
@@ -90,32 +158,46 @@ export default function ProfileScreen() {
             <IconSymbol name="arrow.forward" size={18} color="#2D3A2E" />
             <Text style={styles.growthTitle}>Latest Growth</Text>
           </View>
-          <View style={styles.growthRow}>
-            <Text style={styles.growthLabel}>Weight:</Text>
-            <Text style={styles.growthValue}>14.2 lbs</Text>
-          </View>
-          <View style={styles.growthRow}>
-            <Text style={styles.growthLabel}>Height:</Text>
-            <Text style={styles.growthValue}>24.5 in</Text>
-          </View>
-          <View style={styles.growthBtnRow}>
-            <TouchableOpacity
-              style={styles.growthBtnOutline}
-              onPress={() => router.push('/(screens)/growth-chart')}
-              accessibilityLabel="View growth chart"
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <IconSymbol name="chart.bar.fill" size={16} color="#2D3A2E" />
-                <Text style={styles.growthBtnOutlineText}>View Growth Chart</Text>
+
+          {loading ? (
+            <ActivityIndicator size="small" color="#3B322C" />
+          ) : latestGrowth ? (
+            <>
+              <View style={styles.growthRow}>
+                <Text style={styles.growthLabel}>Weight:</Text>
+                <Text style={styles.growthValue}>{latestGrowth.weight} lbs</Text>
               </View>
-            </TouchableOpacity>
-          </View>
+              <View style={styles.growthRow}>
+                <Text style={styles.growthLabel}>Height:</Text>
+                <Text style={styles.growthValue}>{latestGrowth.height} in</Text>
+              </View>
+              <View style={styles.growthRow}>
+                <Text style={styles.growthLabel}>Date:</Text>
+                <Text style={styles.growthValue}>
+                  {new Date(latestGrowth.date).toLocaleDateString()}
+                </Text>
+              </View>
+              <View style={styles.growthBtnRow}>
+                <TouchableOpacity
+                  style={styles.growthBtnOutline}
+                  onPress={() => router.push('/(screens)/growth-chart')}
+                  accessibilityLabel="View growth chart"
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <IconSymbol name="chart.bar.fill" size={16} color="#2D3A2E" />
+                    <Text style={styles.growthBtnOutlineText}>View Growth Chart</Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+            </>
+          ) : (
+            <Text style={{ color: '#867E76' }}>No growth data found.</Text>
+          )}
         </View>
 
         {/* Support */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Support</Text>
-          {/* Removed Help Center */}
           <ProfileItem icon="mail" label="Contact Support" onPress={openEmail} />
           <ProfileItem icon="star" label="Rate App" onPress={() => setRateModalVisible(true)} />
         </View>
@@ -303,7 +385,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
-  // Modal styles
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.25)',
@@ -355,4 +436,3 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
 });
-
