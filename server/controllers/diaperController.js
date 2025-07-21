@@ -1,5 +1,5 @@
 const { z } = require('zod');
-const { db } = require('../firebaseAdmin');  // import Firestore
+const { db } = require('../../firebaseAdmin'); // adjust path if needed
 
 const diaperSchema = z.object({
   type: z.enum(['Pee', 'Poop', 'Both']),

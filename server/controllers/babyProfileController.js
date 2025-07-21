@@ -1,21 +1,35 @@
-const { db } = require('../firebaseAdmin'); // adjust path if needed
+const { db } = require('../../firebaseAdmin'); // adjust path if needed
 
 const saveBabyProfile = async (req, res) => {
   try {
-    const { dob, gender, growthData } = req.body;
+    const { userId, name, dob, gender, growthData = [] } = req.body;
 
-    // Basic validation
-    if (!dob || !gender || !Array.isArray(growthData)) {
-      return res.status(400).json({ error: 'Missing required fields or invalid data.' });
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized: Missing userId' });
     }
 
-    const entry = { dob, gender, growthData, updatedAt: new Date().toISOString() };
+    // Basic validation
+    if (!name || !dob || !gender) {
+      return res.status(400).json({ error: 'Missing required fields: name, dob, or gender.' });
+    }
 
-    // Save to Firestore (overwrite or create single document)
-    const docRef = db.collection('babyProfiles').doc('main'); // or use dynamic user ID if needed
+    if (!Array.isArray(growthData)) {
+      return res.status(400).json({ error: 'growthData must be an array.' });
+    }
+
+    const entry = {
+      name,
+      dob,
+      gender,
+      growthData,
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Save under userId document for multi-user support
+    const docRef = db.collection('babyProfiles').doc(userId);
     await docRef.set(entry);
 
-    console.log('Saved baby profile to Firestore:', entry);
+    console.log(`Saved baby profile for user ${userId}:`, entry);
 
     return res.status(200).json({ message: 'Baby profile saved successfully', data: entry });
   } catch (error) {

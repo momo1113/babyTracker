@@ -1,4 +1,4 @@
-const { db } = require('../firebaseAdmin');
+const { db } = require('../../firebaseAdmin'); // adjust path if needed
 
 // Helper to convert Firestore Timestamp to JS Date
 function toDate(timestamp) {

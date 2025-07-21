@@ -1,5 +1,5 @@
 const { z } = require('zod');
-const { db } = require('../firebaseAdmin');  // import Firestore instance
+const { db } = require('../../firebaseAdmin'); // adjust path if needed
 
 const sleepSchema = z.object({
   startTime: z.string().refine(val => !isNaN(Date.parse(val)), 'Invalid start time'),

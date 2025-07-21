@@ -1,24 +1,20 @@
-// middleware/verifyFirebaseToken.js
+const admin = require('firebase-admin');
 
-const admin = require('../firebaseAdmin'); // path to your firebase admin init file
-
-const verifyFirebaseToken = async (req, res, next) => {
+async function verifyFirebaseToken(req, res, next) {
   const authHeader = req.headers.authorization;
-
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Unauthorized: No token provided' });
   }
 
   const idToken = authHeader.split('Bearer ')[1];
-
   try {
     const decodedToken = await admin.auth().verifyIdToken(idToken);
-    req.user = decodedToken; // Now req.user contains Firebase user's data
+    req.user = decodedToken;  // optional: attach decoded user info
     next();
   } catch (error) {
-    console.error('Token verification failed:', error);
+    console.error('Token verification error:', error);
     return res.status(401).json({ error: 'Unauthorized: Invalid token' });
   }
-};
+}
 
 module.exports = verifyFirebaseToken;

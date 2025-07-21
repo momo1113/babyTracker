@@ -1,5 +1,5 @@
 const { z } = require('zod');
-const { db } = require('../firebaseAdmin'); // import your Firestore instance
+const { db } = require('../../firebaseAdmin'); // adjust path if needed
 
 
 const baseSchema = z.object({

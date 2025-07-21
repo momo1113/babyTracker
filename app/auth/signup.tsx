@@ -6,19 +6,96 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { IconSymbol } from '@/components/ui/IconSymbol'; // Make sure this exists and is working
+import { IconSymbol } from '@/components/ui/IconSymbol';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { getAuth } from 'firebase/auth';
 
 export default function BabyProfileScreen() {
   const router = useRouter();
+  const auth = getAuth();
+
   const [name, setName] = useState('');
   const [dob, setDob] = useState('');
   const [gender, setGender] = useState('');
+  const [showPicker, setShowPicker] = useState(false);
 
-  const handlePress = () => {
-    router.replace('/(tabs)/home');
+  // For Date picker state
+  const [selectedDate, setSelectedDate] = useState(new Date());
+
+  // Validation: all fields must be filled
+  const isValid = name.trim() && dob.trim() && gender.trim();
+
+  const handleDateChange = (event, date) => {
+    setShowPicker(false);
+    if (date) {
+      setSelectedDate(date);
+      // Format as mm/dd/yyyy
+      const formattedDate = `${(date.getMonth() + 1)
+        .toString()
+        .padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}/${date.getFullYear()}`;
+      setDob(formattedDate);
+    }
   };
+
+ 
+const saveBabyProfile = async () => {
+  if (!isValid) {
+    Alert.alert('Validation', 'Please fill in all required fields.');
+    return;
+  }
+
+  const auth = getAuth();
+  const user = auth.currentUser;
+  if (!user) {
+    Alert.alert('Authentication', 'Please login first.');
+    router.push('/auth/login');
+    return;
+  }
+
+  try {
+    // Get the current Firebase ID token
+    const idToken = await user.getIdToken(true);
+
+    const payload = {
+      userId: user.uid,
+      name,
+      dob,
+      gender,
+      growthData: [],
+    };
+
+    const response = await fetch('http://192.168.1.9:3000/baby-profile', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${idToken}`,  // Add token here
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+    console.log('Save baby profile response:', data);
+
+    if (!response.ok) {
+      Alert.alert('Error', data.error || 'Failed to save baby profile');
+      return;
+    }
+
+    Alert.alert('Success', 'Baby profile saved successfully!', [
+      {
+        text: 'OK',
+        onPress: () => router.replace('/(tabs)/home'),
+      },
+    ]);
+  } catch (error) {
+    console.error('Save baby profile error', error);
+    Alert.alert('Error', 'Network error, please try again.');
+  }
+};
+
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -49,23 +126,30 @@ export default function BabyProfileScreen() {
 
       {/* Date of Birth */}
       <Text style={styles.label}>Date of Birth</Text>
-      <View style={styles.dobRow}>
-        <TextInput
-          style={styles.input}
-          placeholder="mm/dd/yyyy"
-          placeholderTextColor="#7A867B"
-          value={dob}
-          onChangeText={setDob}
+      <TouchableOpacity
+        style={styles.input}
+        onPress={() => setShowPicker(true)}
+        activeOpacity={0.7}
+      >
+        <Text style={{ color: dob ? '#2D3A2E' : '#7A867B', fontSize: 15 }}>
+          {dob || 'Select Date of Birth'}
+        </Text>
+      </TouchableOpacity>
+
+      {showPicker && (
+        <DateTimePicker
+          value={selectedDate}
+          mode="date"
+          display="spinner"
+          onChange={handleDateChange}
+          maximumDate={new Date()}
         />
-        <TouchableOpacity style={styles.calendarBtn}>
-          <IconSymbol name="calendar" size={18} color="#687076" />
-        </TouchableOpacity>
-      </View>
+      )}
 
       {/* Gender Selection */}
       <Text style={styles.label}>Gender</Text>
       <View style={styles.genderRow}>
-        {['Male', 'Female', 'Prefer not to say'].map((option) => (
+        {['Male', 'Female'].map((option) => (
           <TouchableOpacity
             key={option}
             style={styles.genderOption}
@@ -94,7 +178,11 @@ export default function BabyProfileScreen() {
       </View>
 
       {/* Next Button */}
-      <TouchableOpacity style={styles.nextBtn} onPress={handlePress}>
+      <TouchableOpacity
+        style={[styles.nextBtn, !isValid && styles.nextBtnDisabled]}
+        onPress={saveBabyProfile}
+        disabled={!isValid}
+      >
         <Text style={styles.nextBtnText}>Next</Text>
       </TouchableOpacity>
 
@@ -177,17 +265,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     width: '100%',
   },
-  dobRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-  },
-  calendarBtn: {
-    position: 'absolute',
-    right: 12,
-    top: 12,
-    padding: 4,
-  },
   genderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -246,6 +323,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 16,
     marginBottom: 12,
+  },
+  nextBtnDisabled: {
+    backgroundColor: '#ccc',
   },
   nextBtnText: {
     color: '#fff',
