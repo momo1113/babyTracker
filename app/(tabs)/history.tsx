@@ -11,14 +11,20 @@ import {
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import Modal from 'react-native-modal';
 import { Calendar } from 'react-native-calendars';
-import { formatDistanceToNow, parseISO } from 'date-fns';
 
 const TABS = ['All', 'Feeding', 'Diaper', 'Sleep'];
+  const getLocalDateString = () => {
+  const today = new Date();
+  const offsetMs = today.getTimezoneOffset() * 60 * 1000;
+  const localISODate = new Date(today.getTime() - offsetMs).toISOString().split('T')[0];
+  return localISODate;
+  };
 
 export default function HistoryScreen() {
   const [selectedTab, setSelectedTab] = useState('All');
   const [isModalVisible, setModalVisible] = useState(false);
-  const [selectedDate, setSelectedDate] = useState('2025-07-18'); // default date
+const [selectedDate, setSelectedDate] = useState(getLocalDateString());
+
   const [loading, setLoading] = useState(false);
   const [logs, setLogs] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -80,14 +86,17 @@ export default function HistoryScreen() {
 };
 
 
-  // Format relative time like "45 minutes ago"
-  const formatRelativeTime = (timeString) => {
-    try {
-      return formatDistanceToNow(parseISO(timeString), { addSuffix: true });
-    } catch {
-      return timeString;
-    }
-  };
+ const formatExactTime = (isoString) => {
+  try {
+    const date = new Date(isoString);
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  } catch {
+    return isoString;
+  }
+};
 
   return (
     <ScrollView
@@ -141,7 +150,7 @@ export default function HistoryScreen() {
                 </View>
               </View>
               <Text style={styles.cardTime}>
-                {formatRelativeTime(item.time)}
+                {formatExactTime(item.time)}
               </Text>
             </View>
           ))
