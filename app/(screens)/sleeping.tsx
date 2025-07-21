@@ -89,7 +89,7 @@ export default function SleepLogScreen() {
     };
 
     try {
-      const response = await fetch('http://192.168.1.9:3000/sleep', {
+      const response = await fetch('http://192.168.1.9:3000/sleeping', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
