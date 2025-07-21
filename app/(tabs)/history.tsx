@@ -23,7 +23,7 @@ const TABS = ['All', 'Feeding', 'Diaper', 'Sleep'];
 export default function HistoryScreen() {
   const [selectedTab, setSelectedTab] = useState('All');
   const [isModalVisible, setModalVisible] = useState(false);
-const [selectedDate, setSelectedDate] = useState(getLocalDateString());
+  const [selectedDate, setSelectedDate] = useState(getLocalDateString());
 
   const [loading, setLoading] = useState(false);
   const [logs, setLogs] = useState([]);
