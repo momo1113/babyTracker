@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { IconSymbol } from '@/components/ui/IconSymbol';
@@ -21,18 +22,14 @@ export default function BabyProfileScreen() {
   const [dob, setDob] = useState('');
   const [gender, setGender] = useState('');
   const [showPicker, setShowPicker] = useState(false);
-
-  // For Date picker state
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  // Validation: all fields must be filled
   const isValid = name.trim() && dob.trim() && gender.trim();
 
   const handleDateChange = (event, date) => {
     setShowPicker(false);
     if (date) {
       setSelectedDate(date);
-      // Format as mm/dd/yyyy
       const formattedDate = `${(date.getMonth() + 1)
         .toString()
         .padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}/${date.getFullYear()}`;
@@ -40,81 +37,71 @@ export default function BabyProfileScreen() {
     }
   };
 
- 
-const saveBabyProfile = async () => {
-  if (!isValid) {
-    Alert.alert('Validation', 'Please fill in all required fields.');
-    return;
-  }
-
-  const auth = getAuth();
-  const user = auth.currentUser;
-  if (!user) {
-    Alert.alert('Authentication', 'Please login first.');
-    router.push('/auth/login');
-    return;
-  }
-
-  try {
-    // Get the current Firebase ID token
-    const idToken = await user.getIdToken(true);
-
-    const payload = {
-      userId: user.uid,
-      name,
-      dob,
-      gender,
-      growthData: [],
-    };
-
-    const response = await fetch('http://192.168.1.9:3000/baby-profile', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${idToken}`,  // Add token here
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await response.json();
-    console.log('Save baby profile response:', data);
-
-    if (!response.ok) {
-      Alert.alert('Error', data.error || 'Failed to save baby profile');
+  const saveBabyProfile = async () => {
+    if (!isValid) {
+      Alert.alert('Validation', 'Please fill in all required fields.');
       return;
     }
 
-    Alert.alert('Success', 'Baby profile saved successfully!', [
-      {
-        text: 'OK',
-        onPress: () => router.replace('/(tabs)/home'),
-      },
-    ]);
-  } catch (error) {
-    console.error('Save baby profile error', error);
-    Alert.alert('Error', 'Network error, please try again.');
-  }
-};
+    const user = auth.currentUser;
+    if (!user) {
+      Alert.alert('Authentication', 'Please login first.');
+      router.push('/auth/login');
+      return;
+    }
 
+    try {
+      const payload = {
+        userId: user.uid,
+        name,
+        dob,
+        gender,
+        growthData: [],
+      };
+
+      const response = await fetch('http://192.168.1.9:3000/baby-profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${await user.getIdToken()}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      console.log('Save baby profile response:', data);
+
+      if (!response.ok) {
+        Alert.alert('Error', data.error || 'Failed to save baby profile');
+        return;
+      }
+
+      Alert.alert('Success', 'Baby profile saved successfully!', [
+        {
+          text: 'OK',
+          onPress: () => router.replace('/(tabs)/home'),
+        },
+      ]);
+    } catch (error) {
+      console.error('Save baby profile error', error);
+      Alert.alert('Error', 'Network error, please try again.');
+    }
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* Back Button */}
       <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
         <IconSymbol name="chevron-left" size={20} color="#7A867B" />
         <Text style={styles.backText}>Back</Text>
       </TouchableOpacity>
 
-      {/* Icon */}
       <View style={styles.iconCircle}>
         <Text style={styles.icon}>👶</Text>
       </View>
 
-      {/* Title & Subtitle */}
       <Text style={styles.title}>Create Baby Profile</Text>
       <Text style={styles.subtitle}>Tell us about your little one</Text>
 
-      {/* Baby's Name */}
       <Text style={styles.label}>Baby's Name</Text>
       <TextInput
         style={styles.input}
@@ -124,29 +111,31 @@ const saveBabyProfile = async () => {
         onChangeText={setName}
       />
 
-      {/* Date of Birth */}
       <Text style={styles.label}>Date of Birth</Text>
-      <TouchableOpacity
-        style={styles.input}
-        onPress={() => setShowPicker(true)}
-        activeOpacity={0.7}
-      >
-        <Text style={{ color: dob ? '#2D3A2E' : '#7A867B', fontSize: 15 }}>
-          {dob || 'Select Date of Birth'}
-        </Text>
-      </TouchableOpacity>
+      <View style={styles.inputWithIcon}>
+        <TouchableOpacity
+          style={styles.inputTouchable}
+          onPress={() => setShowPicker(true)}
+        >
+          <Text style={[styles.inputText, !dob && { color: '#7A867B' }]}>
+            {dob || 'Select Date of Birth'}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => setShowPicker(true)}>
+          <IconSymbol name="calendar" size={20} color="#687076" />
+        </TouchableOpacity>
+      </View>
 
       {showPicker && (
         <DateTimePicker
           value={selectedDate}
           mode="date"
-          display="spinner"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
           onChange={handleDateChange}
           maximumDate={new Date()}
         />
       )}
 
-      {/* Gender Selection */}
       <Text style={styles.label}>Gender</Text>
       <View style={styles.genderRow}>
         {['Male', 'Female'].map((option) => (
@@ -166,7 +155,6 @@ const saveBabyProfile = async () => {
         ))}
       </View>
 
-      {/* Info Box */}
       <View style={styles.infoBox}>
         <IconSymbol name="info" size={18} color="#D4C5B3" style={styles.infoIcon} />
         <View style={{ flex: 1 }}>
@@ -177,7 +165,6 @@ const saveBabyProfile = async () => {
         </View>
       </View>
 
-      {/* Next Button */}
       <TouchableOpacity
         style={[styles.nextBtn, !isValid && styles.nextBtnDisabled]}
         onPress={saveBabyProfile}
@@ -186,7 +173,6 @@ const saveBabyProfile = async () => {
         <Text style={styles.nextBtnText}>Next</Text>
       </TouchableOpacity>
 
-      {/* Link to Login */}
       <TouchableOpacity onPress={() => router.push('/auth/login')}>
         <Text style={styles.loginLink}>
           Already have an account?{' '}
@@ -194,7 +180,6 @@ const saveBabyProfile = async () => {
         </Text>
       </TouchableOpacity>
 
-      {/* Privacy */}
       <Text style={styles.privacyText}>Your data stays private and secure</Text>
     </ScrollView>
   );
@@ -264,6 +249,26 @@ const styles = StyleSheet.create({
     color: '#2D3A2E',
     marginBottom: 8,
     width: '100%',
+  },
+  inputWithIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E8E8E8',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 8,
+    width: '100%',
+    justifyContent: 'space-between',
+  },
+  inputTouchable: {
+    flex: 1,
+  },
+  inputText: {
+    fontSize: 15,
+    color: '#2D3A2E',
   },
   genderRow: {
     flexDirection: 'row',
