@@ -80,6 +80,23 @@ const getBabyProfile = async (req, res) => {
 };
 
 
+const getAllGrowthEntries = async (req, res) => {
+  try {
+    const doc = await db.collection('babyProfiles').doc('main').get();
 
-module.exports = { saveBabyProfile, getBabyProfile };
+    if (!doc.exists) {
+      return res.status(404).json({ error: 'Baby profile not found' });
+    }
+
+    const data = doc.data();
+    const growthData = Array.isArray(data.growthData) ? data.growthData : [];
+
+    return res.status(200).json({ growthData });
+  } catch (error) {
+    console.error('Error fetching growth entries:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+module.exports = { saveBabyProfile, getBabyProfile, getAllGrowthEntries };
 
