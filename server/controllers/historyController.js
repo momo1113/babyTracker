@@ -52,7 +52,7 @@ exports.getLogsByDate = async (req, res) => {
         type: 'Diaper',
         icon: 'paper-towel',
         time: log.timestamp,
-        details: [log.diaperType, log.color, log.texture].filter(Boolean).join(' • '),
+        details: [log.type, log.color, log.texture].filter(Boolean).join(' • '),
       })),
       ...filteredSleeping.map((log) => ({
         type: 'Sleep',
