@@ -1,26 +1,44 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Alert,
+} from 'react-native';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../../firebaseConfig'; // adjust path if different
 
 export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handlePress = () => {
-  if (isLogin) {
-    router.push('/(tabs)/home'); // Navigate to signup
-  } else {
-    router.push('/auth/signup'); // Or whatever path you want
-  }
-  };
+const handlePress = async () => {
+  if (!email || !password) return alert('Please enter email and password');
 
+  try {
+    if (isLogin) {
+      // Login
+      await signInWithEmailAndPassword(auth, email, password);
+      router.replace('/(tabs)/home'); // go to home page
+    } else {
+      // Sign up
+      await createUserWithEmailAndPassword(auth, email, password);
+      router.replace('/auth/signup'); // 👈 redirect to baby info form
+    }
+  } catch (error: any) {
+    alert(error.message);
+  }
+};
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* Logo */}
       <View style={styles.logoCircle}>
-        {/* Replace with your logo or icon */}
         <Text style={styles.logoIcon}>👶</Text>
       </View>
 
@@ -31,7 +49,6 @@ export default function AuthScreen() {
           : 'Sign up to start tracking your baby’s activities.'}
       </Text>
 
-      {/* Email Input */}
       <TextInput
         style={styles.input}
         placeholder="Email"
@@ -42,7 +59,6 @@ export default function AuthScreen() {
         onChangeText={setEmail}
       />
 
-      {/* Password Input */}
       <TextInput
         style={styles.input}
         placeholder="Password"
@@ -52,12 +68,12 @@ export default function AuthScreen() {
         onChangeText={setPassword}
       />
 
-      {/* Action Button */}
-      <TouchableOpacity style={styles.actionBtn} onPress={handlePress}>
-        <Text style={styles.actionBtnText}>{isLogin ? 'Log In' : 'Sign Up'}</Text>
+      <TouchableOpacity style={styles.actionBtn} onPress={handlePress} disabled={loading}>
+        <Text style={styles.actionBtnText}>
+          {loading ? 'Please wait...' : isLogin ? 'Log In' : 'Sign Up'}
+        </Text>
       </TouchableOpacity>
 
-      {/* Switch Auth Mode */}
       <TouchableOpacity onPress={() => setIsLogin(!isLogin)}>
         <Text style={styles.switchText}>
           {isLogin
@@ -66,25 +82,23 @@ export default function AuthScreen() {
         </Text>
       </TouchableOpacity>
 
-      {/* Divider */}
       <View style={styles.dividerRow}>
         <View style={styles.divider} />
         <Text style={styles.dividerText}>or</Text>
         <View style={styles.divider} />
       </View>
 
-      {/* Social Auth (placeholder) */}
       <TouchableOpacity style={styles.socialBtn}>
         <Text style={styles.socialBtnText}>Continue with Google</Text>
       </TouchableOpacity>
 
-      {/* Privacy */}
       <Text style={styles.privacyText}>
         Your data stays private and secure
       </Text>
     </ScrollView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff', padding: 24 },

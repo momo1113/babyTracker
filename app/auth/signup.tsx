@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+} from 'react-native';
 import { useRouter } from 'expo-router';
+import { IconSymbol } from '@/components/ui/IconSymbol'; // Make sure this exists and is working
 
 export default function BabyProfileScreen() {
   const router = useRouter();
@@ -9,11 +17,17 @@ export default function BabyProfileScreen() {
   const [gender, setGender] = useState('');
 
   const handlePress = () => {
-    router.push('/(tabs)/home'); // Navigate to signup
+    router.replace('/(tabs)/home');
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      {/* Back Button */}
+      <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <IconSymbol name="chevron-left" size={20} color="#7A867B" />
+        <Text style={styles.backText}>Back</Text>
+      </TouchableOpacity>
+
       {/* Icon */}
       <View style={styles.iconCircle}>
         <Text style={styles.icon}>👶</Text>
@@ -28,7 +42,7 @@ export default function BabyProfileScreen() {
       <TextInput
         style={styles.input}
         placeholder="Enter baby's name"
-        placeholderTextColor="#687076"
+        placeholderTextColor="#7A867B"
         value={name}
         onChangeText={setName}
       />
@@ -39,12 +53,12 @@ export default function BabyProfileScreen() {
         <TextInput
           style={styles.input}
           placeholder="mm/dd/yyyy"
-          placeholderTextColor="#687076"
+          placeholderTextColor="#7A867B"
           value={dob}
           onChangeText={setDob}
         />
         <TouchableOpacity style={styles.calendarBtn}>
-          <Text style={styles.calendarIcon}>📅</Text>
+          <IconSymbol name="calendar" size={18} color="#687076" />
         </TouchableOpacity>
       </View>
 
@@ -57,14 +71,20 @@ export default function BabyProfileScreen() {
             style={styles.genderOption}
             onPress={() => setGender(option)}
           >
-            <View style={[styles.radioCircle, gender === option && styles.radioSelected]} />
+            <View
+              style={[
+                styles.radioCircle,
+                gender === option && styles.radioSelected,
+              ]}
+            />
             <Text style={styles.genderText}>{option}</Text>
           </TouchableOpacity>
         ))}
       </View>
+
       {/* Info Box */}
       <View style={styles.infoBox}>
-        <Text style={styles.infoIcon}>ℹ️</Text>
+        <IconSymbol name="info" size={18} color="#D4C5B3" style={styles.infoIcon} />
         <View style={{ flex: 1 }}>
           <Text style={styles.infoTitle}>Why we need this info</Text>
           <Text style={styles.infoText}>
@@ -78,10 +98,12 @@ export default function BabyProfileScreen() {
         <Text style={styles.nextBtnText}>Next</Text>
       </TouchableOpacity>
 
+      {/* Link to Login */}
       <TouchableOpacity onPress={() => router.push('/auth/login')}>
-      <Text style={styles.loginLink}>
-        Already have an account? <Text style={styles.loginLinkBold}>Log in</Text>
-      </Text>
+        <Text style={styles.loginLink}>
+          Already have an account?{' '}
+          <Text style={styles.loginLinkBold}>Log in</Text>
+        </Text>
       </TouchableOpacity>
 
       {/* Privacy */}
@@ -93,31 +115,45 @@ export default function BabyProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    backgroundColor: '#F6F7F4', // Soft neutral background
+    backgroundColor: '#F9F9F7',
     padding: 24,
-    paddingTop: 52,
+    paddingTop: 76,
     alignItems: 'center',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 44,
+    left: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backText: {
+    marginLeft: 6,
+    color: '#7A867B',
+    fontSize: 15,
   },
   iconCircle: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#C5D7BD', // Soft green
+    backgroundColor: '#E1D3C1',
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 24,
+    marginBottom: 24,
   },
-  icon: { fontSize: 36 },
+  icon: {
+    fontSize: 36,
+  },
   title: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#2D3A2E', // Dark olive
+    color: '#2D3A2E',
     textAlign: 'center',
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 15,
-    color: '#7A867B', // Muted green-gray
+    color: '#7A867B',
     textAlign: 'center',
     marginBottom: 24,
   },
@@ -130,8 +166,8 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   input: {
-    backgroundColor: '#fff',
-    borderColor: '#D9E4DD', // Light border
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E8E8E8',
     borderWidth: 1,
     borderRadius: 10,
     paddingVertical: 10,
@@ -149,12 +185,8 @@ const styles = StyleSheet.create({
   calendarBtn: {
     position: 'absolute',
     right: 12,
-    top: 8,
+    top: 12,
     padding: 4,
-  },
-  calendarIcon: {
-    fontSize: 20,
-    color: '#7A867B',
   },
   genderRow: {
     flexDirection: 'row',
@@ -173,12 +205,10 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#7A867B',
     marginRight: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   radioSelected: {
-    backgroundColor: '#8FB89C',
-    borderColor: '#8FB89C',
+    backgroundColor: '#D4C5B3',
+    borderColor: '#D4C5B3',
   },
   genderText: {
     fontSize: 14,
@@ -187,7 +217,7 @@ const styles = StyleSheet.create({
   infoBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#E9F2EC',
+    backgroundColor: '#F5EDE1',
     borderRadius: 10,
     padding: 12,
     marginTop: 16,
@@ -195,8 +225,6 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   infoIcon: {
-    fontSize: 18,
-    color: '#8FB89C',
     marginRight: 10,
     marginTop: 2,
   },
@@ -212,7 +240,7 @@ const styles = StyleSheet.create({
   },
   nextBtn: {
     width: '100%',
-    backgroundColor: '#8FB89C',
+    backgroundColor: '#D4C5B3',
     borderRadius: 10,
     paddingVertical: 16,
     alignItems: 'center',
@@ -234,22 +262,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#2D3A2E',
   },
-  dotsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#D9E4DD',
-    marginHorizontal: 4,
-  },
-  dotActive: {
-    backgroundColor: '#8FB89C',
-  },
   privacyText: {
     color: '#7A867B',
     fontSize: 13,
@@ -257,4 +269,3 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
 });
-
