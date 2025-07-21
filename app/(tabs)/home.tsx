@@ -1,39 +1,58 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  RefreshControl,
+  ActivityIndicator,
+} from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useRouter } from 'expo-router';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+
+dayjs.extend(relativeTime);
 
 export default function HomeScreen() {
   const router = useRouter();
   const [timelineData, setTimelineData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(dayjs());
+
+  const fetchTimeline = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('http://192.168.1.9:3000/logs/today');
+      if (!response.ok) throw new Error('Failed to load timeline data');
+      const data = await response.json();
+      setTimelineData(data);
+      setLastUpdated(dayjs());
+    } catch (error) {
+      console.error('Error fetching timeline:', error);
+      setTimelineData([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
-    async function fetchTimeline() {
-      try {
-        const response = await fetch('http://192.168.1.9:3000/logs/today');
-        console.log(response)
-        if (!response.ok) {
-          console.error('Failed to load timeline data');
-          setTimelineData([]);
-          setLoading(false);
-          return;
-        }
-        const data = await response.json();
-        setTimelineData(data);
-      } catch (error) {
-        console.error('Error fetching timeline:', error);
-        setTimelineData([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-
     fetchTimeline();
   }, []);
 
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchTimeline();
+  };
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
       {/* Profile Section */}
       <View style={styles.profileSection}>
         <View style={styles.avatar} />
@@ -43,7 +62,7 @@ export default function HomeScreen() {
         </View>
         <View style={styles.lastSeen}>
           <IconSymbol name="clock.fill" size={16} color="#687076" />
-          <Text style={styles.lastSeenText}>Last: 45m ago</Text>
+          <Text style={styles.lastSeenText}>Last: {dayjs(lastUpdated).fromNow()}</Text>
         </View>
       </View>
 
@@ -63,20 +82,20 @@ export default function HomeScreen() {
 
       {/* Timeline */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle} accessibilityLabel="Timeline for Today">
-          Timeline for Today
-        </Text>
+        <Text style={styles.sectionTitle}>Timeline for Today</Text>
         {loading ? (
           <ActivityIndicator size="small" color="#687076" />
         ) : timelineData.length > 0 ? (
-          timelineData.map((item, index) => (
-            <TimelineItem
-              key={index}
-              type={item.type}
-              time={item.time}
-              details={item.details}
-            />
-          ))
+          <ScrollView style={{ maxHeight: 350 }}>
+            {timelineData.map((item, index) => (
+              <TimelineItem
+                key={index}
+                type={item.type}
+                time={item.time}
+                details={item.details}
+              />
+            ))}
+          </ScrollView>
         ) : (
           <Text style={styles.noEventsText}>No events for today</Text>
         )}
@@ -85,31 +104,16 @@ export default function HomeScreen() {
   );
 }
 
-
-// Quick Action Button
-function QuickAction({
-  icon,
-  label,
-  onPress,
-}: {
-  icon: string;
-  label: string;
-  onPress?: () => void;
-}) {
+function QuickAction({ icon, label, onPress }) {
   return (
-    <TouchableOpacity
-      style={styles.quickAction}
-      onPress={onPress}
-      accessibilityLabel={`Navigate to ${label} screen`}
-    >
+    <TouchableOpacity style={styles.quickAction} onPress={onPress}>
       <IconSymbol name={icon} size={32} color="#687076" />
       <Text style={styles.quickActionLabel}>{label}</Text>
     </TouchableOpacity>
   );
 }
 
-// Suggestion Card
-function Suggestion({ text }: { text: string }) {
+function Suggestion({ text }) {
   return (
     <View style={styles.suggestion}>
       <IconSymbol name="lightbulb.fill" size={16} color="#687076" />
@@ -118,16 +122,7 @@ function Suggestion({ text }: { text: string }) {
   );
 }
 
-// Timeline Item
-function TimelineItem({
-  type,
-  time,
-  details,
-}: {
-  type: string;
-  time: string;
-  details: { label: string; value: string }[];
-}) {
+function TimelineItem({ type, time, details }) {
   const iconMap = {
     Feeding: 'baby-bottle-outline',
     Diaper: 'paper-towel',
@@ -159,7 +154,7 @@ const styles = StyleSheet.create({
   container: {
     padding: 24,
     paddingTop: 64,
-    backgroundColor: '#F9F9F7', // Warm White
+    backgroundColor: '#F9F9F7',
   },
   profileSection: {
     flexDirection: 'row',
@@ -170,7 +165,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#E1D3C1', // Soft Sand
+    backgroundColor: '#E1D3C1',
     marginRight: 12,
   },
   profileInfo: { flex: 1 },
@@ -189,7 +184,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 4,
     padding: 12,
-    backgroundColor: '#F5EDE1', // Beige Cream
+    backgroundColor: '#F5EDE1',
     borderRadius: 12,
   },
   quickActionLabel: {
@@ -209,7 +204,7 @@ const styles = StyleSheet.create({
   suggestion: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F5EDE1', // Beige Cream
+    backgroundColor: '#F5EDE1',
     borderRadius: 8,
     padding: 10,
     marginBottom: 8,
@@ -229,13 +224,13 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#D4C5B3', // Warm Taupe
+    backgroundColor: '#D4C5B3',
     marginRight: 12,
     marginTop: 6,
   },
   timelineContent: {
     flex: 1,
-    backgroundColor: '#FFFFFF', // Card stays white for contrast
+    backgroundColor: '#FFFFFF',
     borderRadius: 8,
     padding: 12,
     shadowColor: '#000',
@@ -256,7 +251,7 @@ const styles = StyleSheet.create({
   timelineType: {
     fontSize: 13,
     fontWeight: 'bold',
-    backgroundColor: '#E8E8E8', // Light Dove Grey
+    backgroundColor: '#E8E8E8',
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -277,3 +272,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+// app/(tabs)/home.tsx --- IGNORE ---
