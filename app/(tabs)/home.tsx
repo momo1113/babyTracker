@@ -1,52 +1,36 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useRouter } from 'expo-router';
 
-const timelineData = [
-  {
-    date: '2025-07-18',
-    type: 'Feeding',
-    time: '9:30 AM',
-    details: [
-      { label: 'Type', value: 'Breast (Left)' },
-      { label: 'Duration', value: '15 minutes' },
-    ],
-  },
-  {
-    date: '2025-07-18',
-    type: 'Diaper',
-    time: '10:15 AM',
-    details: [
-      { label: 'Type', value: 'Poop' },
-      { label: 'Notes', value: 'Normal consistency' },
-    ],
-  },
-  {
-    date: '2025-07-18',
-    type: 'Sleeping',
-    time: '12:00 PM',
-    details: [
-      { label: 'Duration', value: '1 hour' },
-      { label: 'Quality', value: 'Peaceful' },
-      { label: 'Notes', value: 'Slept well after crying' },
-    ],
-  },
-  {
-    date: '2025-07-17',
-    type: 'Feeding',
-    time: '8:00 AM',
-    details: [
-      { label: 'Type', value: 'Formula' },
-      { label: 'Amount', value: '4 oz' },
-    ],
-  },
-];
-
 export default function HomeScreen() {
   const router = useRouter();
+  const [timelineData, setTimelineData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Filter timelineData for today (2025-07-18)
-  const filteredTimeline = timelineData.filter((item) => item.date === '2025-07-18');
+  useEffect(() => {
+    async function fetchTimeline() {
+      try {
+        const response = await fetch('http://192.168.1.9:3000/logs/today');
+        console.log(response)
+        if (!response.ok) {
+          console.error('Failed to load timeline data');
+          setTimelineData([]);
+          setLoading(false);
+          return;
+        }
+        const data = await response.json();
+        setTimelineData(data);
+      } catch (error) {
+        console.error('Error fetching timeline:', error);
+        setTimelineData([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchTimeline();
+  }, []);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -82,8 +66,10 @@ export default function HomeScreen() {
         <Text style={styles.sectionTitle} accessibilityLabel="Timeline for Today">
           Timeline for Today
         </Text>
-        {filteredTimeline.length > 0 ? (
-          filteredTimeline.map((item, index) => (
+        {loading ? (
+          <ActivityIndicator size="small" color="#687076" />
+        ) : timelineData.length > 0 ? (
+          timelineData.map((item, index) => (
             <TimelineItem
               key={index}
               type={item.type}
@@ -98,6 +84,7 @@ export default function HomeScreen() {
     </ScrollView>
   );
 }
+
 
 // Quick Action Button
 function QuickAction({
