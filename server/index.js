@@ -12,13 +12,15 @@ const diaperRoutes = require('./routes/diaper');
 const sleepRoutes = require('./routes/sleeping');
 const babyProfileRoutes = require('./routes/babyProfile');
 const todayLogsRoutes = require('./routes/todayLogs');
+const historyRoutes = require('./routes/history');
 
 // Register routes
 app.use('/feeding', feedingRoutes);
 app.use('/diaper', diaperRoutes); 
-app.use('/sleep', sleepRoutes);
+app.use('/sleeping', sleepRoutes);
 app.use('/baby-profile', babyProfileRoutes); 
 app.use('/logs/today', todayLogsRoutes);
+app.use('/history', historyRoutes);
 
 app.listen(PORT, () => {
   console.log(`Backend API running on http://localhost:${PORT}`);

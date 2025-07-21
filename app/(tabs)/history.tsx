@@ -1,53 +1,27 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  ActivityIndicator,
+  RefreshControl,
+} from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import Modal from 'react-native-modal';
 import { Calendar } from 'react-native-calendars';
+import { formatDistanceToNow, parseISO } from 'date-fns';
 
 const TABS = ['All', 'Feeding', 'Diaper', 'Sleep'];
-
-const DATA = [
-  {
-    date: '2025-07-18',
-    type: 'Feeding',
-    icon: 'baby-bottle-outline',
-    time: '2:30 PM',
-    details: 'Bottle • 4 oz',
-  },
-  {
-    date: '2025-07-18',
-    type: 'Diaper',
-    icon: 'paper-towel',
-    time: '1:45 PM',
-    details: 'Pee • Yellow',
-  },
-  {
-    date: '2025-07-18',
-    type: 'Sleep',
-    icon: 'bed-outline',
-    time: '12:00 PM',
-    details: 'Nap • 1h 30m',
-  },
-  {
-    date: '2025-07-18',
-    type: 'Feeding',
-    icon: 'baby-bottle-outline',
-    time: '10:30 AM',
-    details: 'Breast • Left • 15 min',
-  },
-  {
-    date: '2025-07-17',
-    type: 'Diaper',
-    icon: 'paper-towel',
-    time: '9:45 AM',
-    details: 'Poop • Brown • Soft',
-  },
-];
 
 export default function HistoryScreen() {
   const [selectedTab, setSelectedTab] = useState('All');
   const [isModalVisible, setModalVisible] = useState(false);
-  const [selectedDate, setSelectedDate] = useState('2025-07-18'); // Default to today
+  const [selectedDate, setSelectedDate] = useState('2025-07-18'); // default date
+  const [loading, setLoading] = useState(false);
+  const [logs, setLogs] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   const toggleModal = () => {
     setModalVisible(!isModalVisible);
@@ -55,52 +29,90 @@ export default function HistoryScreen() {
 
   const handleDateSelect = (day) => {
     setSelectedDate(day.dateString);
-    console.log('Selected date:', day.dateString);
     toggleModal();
   };
 
-  // Filter DATA by date and tab
-  const filteredData = DATA.filter(
-    (item) =>
-      item.date === selectedDate &&
-      (selectedTab === 'All' || item.type === selectedTab)
+  const fetchLogs = async (date) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`http://192.168.1.9:3000/history/${date}`);
+      if (!response.ok) throw new Error('Failed to fetch logs');
+      const data = await response.json();
+      setLogs(data);
+    } catch (error) {
+      console.error(error);
+      setLogs([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLogs(selectedDate);
+  }, [selectedDate]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchLogs(selectedDate);
+  };
+
+  // Filter logs by selected tab
+  const filteredData = logs.filter(
+    (log) => selectedTab === 'All' || log.type === selectedTab
   );
 
-  // Format date for display (e.g., "July 18, 2025")
+  // Calculate summary counts dynamically based on all logs of selected date
+  const counts = { Feeding: 0, Diaper: 0, Sleep: 0 };
+  logs.forEach((log) => {
+    if (counts[log.type] !== undefined) counts[log.type]++;
+  });
+
+  // Format date for header title
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    });
+  const parts = dateString.split('-');
+  const date = new Date(parts[0], parts[1] - 1, parts[2]); // local midnight
+  return date.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+};
+
+
+  // Format relative time like "45 minutes ago"
+  const formatRelativeTime = (timeString) => {
+    try {
+      return formatDistanceToNow(parseISO(timeString), { addSuffix: true });
+    } catch {
+      return timeString;
+    }
   };
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Date Navigation */}
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       <View style={styles.dateNav}>
         <TouchableOpacity onPress={toggleModal}>
           <Text style={styles.dateText}>{formatDate(selectedDate)}</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Summary Row */}
       <View style={styles.summaryRow}>
-        <SummaryItem icon="drop.fill" label="Feeding" count={6} />
-        <SummaryItem icon="bandage.fill" label="Diapers" count={8} />
-        <SummaryItem icon="moon.fill" label="Sleeping" count={4} />
+        <SummaryItem icon="drop.fill" label="Feeding" count={counts.Feeding} />
+        <SummaryItem icon="bandage.fill" label="Diapers" count={counts.Diaper} />
+        <SummaryItem icon="moon.fill" label="Sleeping" count={counts.Sleep} />
       </View>
 
-      {/* Filter Tabs */}
       <View style={styles.tabsRow}>
         {TABS.map((tab) => (
           <TouchableOpacity
             key={tab}
-            style={[
-              styles.tabBtn,
-              selectedTab === tab && styles.tabBtnActive,
-            ]}
+            style={[styles.tabBtn, selectedTab === tab && styles.tabBtnActive]}
             onPress={() => setSelectedTab(tab)}
           >
             <Text
@@ -115,9 +127,10 @@ export default function HistoryScreen() {
         ))}
       </View>
 
-      {/* History List */}
       <View style={styles.listSection}>
-        {filteredData.length > 0 ? (
+        {loading ? (
+          <ActivityIndicator size="small" color="#687076" />
+        ) : filteredData.length > 0 ? (
           filteredData.map((item, idx) => (
             <View key={idx} style={styles.card}>
               <View style={styles.cardLeft}>
@@ -127,7 +140,9 @@ export default function HistoryScreen() {
                   <Text style={styles.cardDetails}>{item.details}</Text>
                 </View>
               </View>
-              <Text style={styles.cardTime}>{item.time}</Text>
+              <Text style={styles.cardTime}>
+                {formatRelativeTime(item.time)}
+              </Text>
             </View>
           ))
         ) : (
@@ -135,7 +150,6 @@ export default function HistoryScreen() {
         )}
       </View>
 
-      {/* Calendar Modal */}
       <Modal
         isVisible={isModalVisible}
         onBackdropPress={toggleModal}
@@ -161,16 +175,11 @@ export default function HistoryScreen() {
           </TouchableOpacity>
         </View>
       </Modal>
-
-      {/* Floating Add Button */}
-      {/* <TouchableOpacity style={styles.fab}>
-        <IconSymbol name="plus" size={28} color="#fff" />
-      </TouchableOpacity> */}
     </ScrollView>
   );
 }
 
-function SummaryItem({ icon, label, count }: { icon: string; label: string; count: number }) {
+function SummaryItem({ icon, label, count }) {
   return (
     <View style={styles.summaryItem}>
       <IconSymbol name={icon} size={24} color="#687076" />
@@ -181,7 +190,7 @@ function SummaryItem({ icon, label, count }: { icon: string; label: string; coun
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9F9F7', paddingHorizontal: 0 }, // Warm White
+  container: { flex: 1, backgroundColor: '#F9F9F7', paddingHorizontal: 0 },
   dateNav: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -195,7 +204,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingVertical: 12,
-    backgroundColor: '#F5EDE1', // Beige Cream
+    backgroundColor: '#F5EDE1',
   },
   summaryItem: { alignItems: 'center', flex: 1 },
   summaryLabel: { fontSize: 13, color: '#7A867B', marginTop: 4 },
@@ -206,10 +215,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#F5EDE1', // Beige Cream
+    backgroundColor: '#F5EDE1',
     marginRight: 8,
   },
-  tabBtnActive: { backgroundColor: '#E1D3C1' }, // Soft Sand
+  tabBtnActive: { backgroundColor: '#E1D3C1' },
   tabBtnText: { color: '#7A867B', fontSize: 15 },
   tabBtnTextActive: { color: '#2D3A2E', fontWeight: 'bold' },
 
@@ -230,25 +239,9 @@ const styles = StyleSheet.create({
   cardLeft: { flexDirection: 'row', alignItems: 'center' },
   cardType: { fontSize: 15, fontWeight: 'bold', color: '#2D3A2E' },
   cardDetails: { fontSize: 13, color: '#7A867B', marginTop: 2 },
-  cardTime: { fontSize: 15, color: '#7A867B', fontWeight: 'bold' },
+  cardTime: { fontSize: 13, color: '#7A867B', fontWeight: '600' },
 
-  fab: {
-    position: 'absolute',
-    right: 24,
-    bottom: 32,
-    backgroundColor: '#2D3A2E',
-    borderRadius: 28,
-    width: 56,
-    height: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 4,
-  },
-
-  modal: {
-    justifyContent: 'center',
-    margin: 0,
-  },
+  modal: { justifyContent: 'center', margin: 0 },
   modalContent: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -259,7 +252,7 @@ const styles = StyleSheet.create({
   closeButton: {
     marginTop: 16,
     padding: 10,
-    backgroundColor: '#F5EDE1', // Beige Cream
+    backgroundColor: '#F5EDE1',
     borderRadius: 8,
   },
   closeButtonText: {
