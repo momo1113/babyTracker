@@ -1,5 +1,6 @@
 const { z } = require('zod');
 const { db } = require('../../firebaseAdmin'); // adjust path if needed
+const { Timestamp } = require('firebase-admin/firestore');
 
 const sleepSchema = z.object({
   startTime: z.string().refine(val => !isNaN(Date.parse(val)), 'Invalid start time'),
@@ -12,20 +13,36 @@ const sleepSchema = z.object({
 
 async function saveSleepLog(req, res) {
   try {
+    const userId = req.user?.uid; // ✅ from token middleware
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized: Missing user ID' });
+    }
+
     const parsed = sleepSchema.parse(req.body);
 
-    // Save to Firestore in "sleepLogs" collection
-    const docRef = await db.collection('sleepLogs').add(parsed);
 
-    return res.status(201).json({
-      message: 'Sleep log saved',
-      id: docRef.id,
-      data: parsed,
-    });
+        // Convert timestamp to Firestore Timestamp if it's a string or number
+        let timestamp;
+        if (parsed.timestamp instanceof Date) {
+          timestamp = Timestamp.fromDate(parsed.timestamp);
+        } else {
+          timestamp = Timestamp.fromDate(new Date(parsed.timestamp));
+        }
+
+    const entry = {
+      ...parsed,
+      userId,
+      timestamp: timestamp, 
+    };
+
+    const docRef = await db.collection('sleepLogs').add(entry);
+
+    return res.status(201).json({ message: 'Sleep log saved', id: docRef.id });
   } catch (err) {
     return res.status(400).json({ error: err.errors?.[0]?.message || 'Validation failed' });
   }
 }
+
 
 async function getSleepLogs(req, res) {
   try {

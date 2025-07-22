@@ -5,6 +5,7 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { getAuth } from 'firebase/auth'; // 🔐 Firebase auth import
 
 export default function SleepLogScreen() {
   const router = useRouter();
@@ -67,45 +68,62 @@ export default function SleepLogScreen() {
       year: 'numeric',
     });
 
-  const handleSave = async () => {
-    if (!type || !location || !quality || !startTime || !endTime) {
-      Alert.alert('Validation Error', 'All fields are required.');
-      return;
-    }
 
-    if (startTime >= endTime) {
-      Alert.alert('Validation Error', 'End time must be after start time.');
-      return;
-    }
+const handleSave = async () => {
+  if (!type || !location || !quality || !startTime || !endTime) {
+    Alert.alert('Validation Error', 'All fields are required.');
+    return;
+  }
 
-    const payload = {
-      startTime: startTime.toISOString(),
-      endTime: endTime.toISOString(),
-      type,
-      location,
-      quality,
-      timestamp: new Date().toISOString(),
-      notes,
-    };
+  if (startTime >= endTime) {
+    Alert.alert('Validation Error', 'End time must be after start time.');
+    return;
+  }
 
-    try {
-      const response = await fetch('http://192.168.1.9:3000/sleeping', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+  const auth = getAuth();
+  const user = auth.currentUser;
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to save sleep log');
-      }
+  if (!user) {
+    Alert.alert('Authentication Error', 'Please log in first.');
+    router.push('/auth/login');
+    return;
+  }
 
-      Alert.alert('Success', 'Sleep log saved successfully.');
-      router.back();
-    } catch (err: any) {
-      Alert.alert('Error', err.message);
-    }
+  const token = await user.getIdToken(); // 🔐 Firebase auth token
+
+  const payload = {
+    userId: user.uid, // ✅ include userId for backend
+    startTime: startTime.toISOString(),
+    endTime: endTime.toISOString(),
+    type,
+    location,
+    quality,
+    timestamp: new Date().toISOString(),
+    notes,
   };
+
+  try {
+    const response = await fetch('http://192.168.1.9:3000/sleeping', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`, // ✅ token for backend auth
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to save sleep log');
+    }
+
+    Alert.alert('Success', 'Sleep log saved successfully.');
+    router.back();
+  } catch (err: any) {
+    Alert.alert('Error', err.message);
+  }
+};
+
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
