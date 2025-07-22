@@ -10,10 +10,16 @@ import {
 } from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useRouter } from 'expo-router';
-import dayjs from 'dayjs';
+import { getAuth } from 'firebase/auth';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import duration from 'dayjs/plugin/duration';
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+
+dayjs.extend(customParseFormat);
 
 dayjs.extend(relativeTime);
+dayjs.extend(duration);
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -22,30 +28,98 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(dayjs());
 
-  const fetchTimeline = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('http://192.168.1.9:3000/logs/today');
-      if (!response.ok) throw new Error('Failed to load timeline data');
-      const data = await response.json();
-      setTimelineData(data);
-      setLastUpdated(dayjs());
-    } catch (error) {
-      console.error('Error fetching timeline:', error);
+  const [profileName, setProfileName] = useState('');
+  const [profileAge, setProfileAge] = useState('');
+
+ const fetchTimeline = useCallback(async () => {
+  try {
+    setLoading(true);
+    const user = getAuth().currentUser;
+    if (!user) throw new Error('User not authenticated');
+
+    const token = await user.getIdToken();
+
+    const response = await fetch('http://192.168.1.9:3000/logs/today', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) throw new Error('Failed to load timeline data');
+
+    const data = await response.json();
+
+    // If data is empty array, just setTimelineData without error
+    if (Array.isArray(data) && data.length === 0) {
       setTimelineData([]);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+    } else {
+      setTimelineData(data);
+    }
+
+    setLastUpdated(dayjs());
+  } catch (error) {
+    // Only log real errors like network issues or server errors
+    if (error.message !== 'Failed to load timeline data') {
+      console.error('Error fetching timeline:', error);
+    }
+    setTimelineData([]);
+  } finally {
+    setLoading(false);
+    setRefreshing(false);
+  }
+}, []);
+
+  const fetchBabyProfile = useCallback(async () => {
+    try {
+      const user = getAuth().currentUser;
+      if (!user) return;
+
+      const token = await user.getIdToken();
+      const response = await fetch('http://192.168.1.9:3000/baby-profile', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to fetch profile');
+
+      setProfileName(data.name);
+      const dob = dayjs(data.dob, 'MM/DD/YYYY');
+
+      if (!dob.isValid()) {
+        console.error('Invalid DOB format:', data.dob);
+        setProfileAge('Invalid DOB');
+        return;
+      }
+
+      const now = dayjs();
+
+      // Calculate months and weeks difference safely
+      let months = now.diff(dob, 'month');
+      let weeks = now.diff(dob.add(months, 'month'), 'week');
+
+      // Edge case: if today or dob in future (shouldn't be future, but just in case)
+      if (months < 0) months = 0;
+      if (weeks < 0) weeks = 0;
+
+      setProfileAge(`${months} ${months === 1 ? 'month' : 'months'}, ${weeks} ${weeks === 1 ? 'week' : 'weeks'}`);
+    } catch (err) {
+      console.error('Failed to load baby profile:', err);
+      setProfileName('N/A');
+      setProfileAge('N/A');
     }
   }, []);
 
   useEffect(() => {
     fetchTimeline();
+    fetchBabyProfile();
   }, []);
 
   const onRefresh = () => {
     setRefreshing(true);
     fetchTimeline();
+    fetchBabyProfile();
   };
 
   return (
@@ -57,8 +131,8 @@ export default function HomeScreen() {
       <View style={styles.profileSection}>
         <View style={styles.avatar} />
         <View style={styles.profileInfo}>
-          <Text style={styles.profileName}>Emma</Text>
-          <Text style={styles.profileAge}>2 months, 3 weeks</Text>
+          <Text style={styles.profileName}>{profileName}</Text>
+          <Text style={styles.profileAge}>{profileAge}</Text>
         </View>
         <View style={styles.lastSeen}>
           <IconSymbol name="clock.fill" size={16} color="#687076" />
@@ -272,4 +346,3 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-// app/(tabs)/home.tsx --- IGNORE ---

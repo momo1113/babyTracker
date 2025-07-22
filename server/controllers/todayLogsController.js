@@ -1,12 +1,16 @@
 const { db } = require('../../firebaseAdmin'); // adjust path if needed
 
-// Helper to convert Firestore Timestamp to JS Date
 function toDate(timestamp) {
   return timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
 }
 
 async function getTodayLogs(req, res) {
   try {
+    const userId = req.user?.uid;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized: Missing userId' });
+    }
+
     const now = new Date();
     const startOfDay = new Date(now);
     startOfDay.setHours(0, 0, 0, 0);
@@ -15,16 +19,19 @@ async function getTodayLogs(req, res) {
 
     const [feedingSnap, diaperSnap, sleepSnap] = await Promise.all([
       db.collection('feedingLogs')
+        .where('userId', '==', userId)
         .where('timestamp', '>=', startOfDay.toISOString())
         .where('timestamp', '<=', endOfDay.toISOString())
         .get(),
 
       db.collection('diaperLogs')
+        .where('userId', '==', userId)
         .where('timestamp', '>=', startOfDay.toISOString())
         .where('timestamp', '<=', endOfDay.toISOString())
         .get(),
 
       db.collection('sleepLogs')
+        .where('userId', '==', userId)
         .where('timestamp', '>=', startOfDay.toISOString())
         .where('timestamp', '<=', endOfDay.toISOString())
         .get(),
@@ -55,15 +62,21 @@ async function getTodayLogs(req, res) {
     }));
 
     const allLogs = [...feedingLogs, ...diaperLogs, ...sleepLogs];
-
     allLogs.sort((a, b) => b.timestamp - a.timestamp);
 
     res.json(allLogs);
   } catch (err) {
     console.error('Error fetching today logs:', err);
-    res.status(500).json({ error: 'Failed to fetch today\'s logs' });
+    res.status(500).json({ error: "Failed to fetch today's logs" });
   }
 }
+
+// ... formatFeedingDetails, formatDiaperDetails, formatSleepDetails unchanged
+
+module.exports = {
+  getTodayLogs,
+};
+
 
 // Helpers to format details per type
 function formatFeedingDetails(data) {

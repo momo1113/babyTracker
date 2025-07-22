@@ -1,4 +1,35 @@
 const { db } = require('../../firebaseAdmin'); // adjust path if needed
+const admin = require('firebase-admin');
+
+const dayjs = require('dayjs');
+
+
+const calculateAge = (dobString) => {
+  const birthDate = dayjs(dobString);
+  const now = dayjs();
+
+  if (!birthDate.isValid()) return 'Invalid date';
+
+  if (birthDate.isAfter(now)) return 'Future date';
+
+  const totalMonths = now.diff(birthDate, 'month');
+  // Days after subtracting full months:
+  const daysAfterMonths = now.subtract(totalMonths, 'month').diff(birthDate, 'day');
+
+  const weeks = Math.floor(daysAfterMonths / 7);
+  const days = daysAfterMonths % 7;
+
+  let ageParts = [];
+
+  if (totalMonths > 0) ageParts.push(`${totalMonths} months`);
+  if (weeks > 0) ageParts.push(`${weeks} weeks`);
+  if (totalMonths === 0 && days > 0) ageParts.push(`${days} days`);
+
+  if (ageParts.length === 0) return '0 days';
+
+  return ageParts.join(', ');
+};
+
 
 const saveBabyProfile = async (req, res) => {
   try {
@@ -17,10 +48,13 @@ const saveBabyProfile = async (req, res) => {
       return res.status(400).json({ error: 'growthData must be an array.' });
     }
 
+    const age = calculateAge(dob);
+
     const entry = {
       name,
       dob,
       gender,
+      age, // Save the calculated age here
       growthData,
       updatedAt: new Date().toISOString(),
     };
@@ -38,9 +72,13 @@ const saveBabyProfile = async (req, res) => {
   }
 };
 
+
 const getBabyProfile = async (req, res) => {
   try {
-    const doc = await db.collection('babyProfiles').doc('main').get();
+    const userId = req.user.uid; // from verifyFirebaseToken middleware
+
+    const docRef = admin.firestore().collection('babyProfiles').doc(userId);
+    const doc = await docRef.get();
 
     if (!doc.exists) {
       return res.status(404).json({ error: 'Baby profile not found' });
@@ -48,47 +86,16 @@ const getBabyProfile = async (req, res) => {
 
     const data = doc.data();
 
-    // Calculate age based on dob
-    const dob = data.dob || '';
-    let age = '';
-    if (dob) {
-      const dobDate = new Date(dob);
-      const now = new Date();
-      let years = now.getFullYear() - dobDate.getFullYear();
-      let months = now.getMonth() - dobDate.getMonth();
-      let days = now.getDate() - dobDate.getDate();
-
-      if (days < 0) {
-        months -= 1;
-        days += new Date(now.getFullYear(), now.getMonth(), 0).getDate();
-      }
-      if (months < 0) {
-        years -= 1;
-        months += 12;
-      }
-
-      age = `${years > 0 ? years + (years === 1 ? ' year, ' : ' years, ') : ''}${months > 0 ? months + (months === 1 ? ' month, ' : ' months, ') : ''}${days} days`.replace(/, $/, '');
-    }
-
-    // Prepare growthData array safely
-    const growthData = Array.isArray(data.growthData)
-      ? data.growthData.map((entry) => ({
-          date: entry.date || '',
-          height: entry.height || '',
-          weight: entry.weight || '',
-        }))
-      : [];
-
-    const babyProfile = {
-      dob,
-      age,
-      gender: data.gender || '',
-      growthData,
-    };
-
-    return res.status(200).json({ data: babyProfile });
+    return res.json({
+      name: data.name, // <-- ✅ ensure this is returned
+      dob: data.dob,
+      gender: data.gender,
+      growthData: data.growthData || [],
+      age: data.age || 0, // optional field
+      updatedAt: data.updatedAt || new Date().toISOString(),
+    });
   } catch (error) {
-    console.error('Error fetching baby profile:', error);
+    console.error('Error getting baby profile:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
