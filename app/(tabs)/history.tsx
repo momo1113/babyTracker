@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,8 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import Modal from 'react-native-modal';
 import { Calendar } from 'react-native-calendars';
  import { getAuth } from 'firebase/auth';
- 
+import { useFocusEffect } from 'expo-router';
+
 const TABS = ['All', 'Feeding', 'Diaper', 'Sleep'];
   const getLocalDateString = () => {
   const today = new Date();
@@ -40,7 +41,7 @@ export default function HistoryScreen() {
   };
 
 
-const fetchLogs = async (date) => {
+const fetchLogs = useCallback(async (date) => {
   setLoading(true);
   try {
     const user = getAuth().currentUser;
@@ -65,7 +66,13 @@ const fetchLogs = async (date) => {
     setLoading(false);
     setRefreshing(false);
   }
-};
+}, []);
+
+useFocusEffect(
+  useCallback(() => {
+    fetchLogs(selectedDate);;
+  }, [fetchLogs])
+);
 
   useEffect(() => {
     fetchLogs(selectedDate);
