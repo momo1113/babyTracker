@@ -1,6 +1,8 @@
 const { z } = require('zod');
 const { db } = require('../../firebaseAdmin'); // adjust path if needed
 
+const { Timestamp } = require('firebase-admin/firestore');
+
 // Extend baseSchema to include userId
 const baseSchema = z.object({
   userId: z.string().min(1, 'Missing userId'), // ✅ Require userId
@@ -45,8 +47,21 @@ async function saveFeedingLog(req, res) {
   try {
     const parsed = feedingSchema.parse(req.body);
 
+    // Convert timestamp to Firestore Timestamp if it's a string or number
+    let timestamp;
+    if (parsed.timestamp instanceof Date) {
+      timestamp = Timestamp.fromDate(parsed.timestamp);
+    } else {
+      timestamp = Timestamp.fromDate(new Date(parsed.timestamp));
+    }
+
+    const dataToSave = {
+      ...parsed,
+      timestamp,
+    };
+
     // Save to Firestore under 'feedingLogs'
-    const docRef = await db.collection('feedingLogs').add(parsed);
+    const docRef = await db.collection('feedingLogs').add(dataToSave);
 
     return res.status(201).json({ message: 'Feeding log saved', id: docRef.id });
   } catch (error) {
@@ -57,6 +72,7 @@ async function saveFeedingLog(req, res) {
     return res.status(500).json({ error: error.message || 'Internal server error' });
   }
 }
+
 
 async function getFeedingLogs(req, res) {
   try {

@@ -78,7 +78,6 @@ const handleSave = async () => {
   }
 
   const token = await user.getIdToken();
-  console.log('dateTime.toISOString(),', dateTime.toISOString(),)
   const payload = {
     userId: user.uid,           // add userId
     feedingType,
@@ -87,7 +86,7 @@ const handleSave = async () => {
     unit: feedingType !== 'Breast' ? unit : null,
     duration,
     notes,
-    timestamp: dateTime.toString(),
+    timestamp: dateTime.toISOString(),
   };
 
   const BASE_URL = 'http://192.168.1.9:3000';
