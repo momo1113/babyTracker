@@ -6,315 +6,344 @@ import {
   TextInput,
   StyleSheet,
   ScrollView,
-  Platform,
   Alert,
+  Platform,
+  ToastAndroid,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { getAuth } from 'firebase/auth';
 
-export default function BabyProfileScreen() {
+export default function FeedingLogScreen() {
   const router = useRouter();
+  const [feedingType, setFeedingType] = useState('Breast');
+  const [side, setSide] = useState('Left');
+  const [amount, setAmount] = useState('');
+  const [unit, setUnit] = useState('oz');
+  const [duration, setDuration] = useState('15');
+  const [notes, setNotes] = useState('');
+  const [dateTime, setDateTime] = useState(new Date());
 
-  const [name, setName] = useState('');
-  const [dob, setDob] = useState('');
-  const [gender, setGender] = useState('');
-  const [pickerMode, setPickerMode] = useState<'date' | null>(null);
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [pickerMode, setPickerMode] = useState<'date' | 'time'>('time');
 
-  // Format Date to MM/DD/YYYY
-  function formatDate(date: Date) {
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const year = date.getFullYear();
-    return `${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')}/${year}`;
+  const formatTime = (date: Date) =>
+    date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const formatDate = (date: Date) =>
+    date.toLocaleDateString('en-US', {
+      month: '2-digit',
+      day: '2-digit',
+      year: 'numeric',
+    });
+
+  const showPicker = (mode: 'time' | 'date') => {
+    setPickerMode(mode);
+    setPickerVisible(true);
+  };
+
+  const handlePickerChange = (_event: any, selectedDate: Date | undefined) => {
+    if (selectedDate) {
+      const newDate = new Date(dateTime);
+      if (pickerMode === 'time') {
+        newDate.setHours(selectedDate.getHours());
+        newDate.setMinutes(selectedDate.getMinutes());
+      } else {
+        newDate.setFullYear(selectedDate.getFullYear());
+        newDate.setMonth(selectedDate.getMonth());
+        newDate.setDate(selectedDate.getDate());
+      }
+      setDateTime(newDate);
+    }
+    setPickerVisible(false);
+  };
+
+const handleSave = async () => {
+  if ((feedingType === 'Bottle' || feedingType === 'Formula') && !amount) {
+    Alert.alert('Validation Error', 'Please enter an amount for Bottle or Formula feeding.');
+    return;
   }
 
-  const handlePickerChange = (event: any, selectedDate?: Date) => {
-    setPickerMode(null);
-    if (selectedDate) {
-      setDob(formatDate(selectedDate));
-    }
+  if (!duration || isNaN(Number(duration)) || Number(duration) <= 0) {
+    Alert.alert('Validation Error', 'Please enter a valid feeding duration in minutes.');
+    return;
+  }
+
+  const auth = getAuth();
+  const user = auth.currentUser;
+  if (!user) {
+    Alert.alert('Authentication Error', 'Please log in first.');
+    router.push('/auth/login');
+    return;
+  }
+
+  const token = await user.getIdToken();
+
+  const payload = {
+    userId: user.uid,           // add userId
+    feedingType,
+    side: feedingType === 'Breast' ? side : null,
+    amount: feedingType !== 'Breast' ? amount : null,
+    unit: feedingType !== 'Breast' ? unit : null,
+    duration,
+    notes,
+    timestamp: dateTime.toISOString(),
   };
 
-  const handlePress = () => {
-    if (!name || !dob || !gender) {
-      Alert.alert('Please fill in all fields');
-      return;
+  const BASE_URL = 'http://192.168.1.9:3000';
+
+  try {
+    const response = await fetch(`${BASE_URL}/feeding`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`, // pass token for backend auth
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to save feeding log');
     }
-    router.replace('/(tabs)/home');
-  };
+
+    await response.json();
+
+    if (Platform.OS === 'android') {
+      ToastAndroid.show('Feeding log saved successfully!', ToastAndroid.SHORT);
+    } else {
+      Alert.alert('Success', 'Feeding log saved successfully!');
+    }
+
+    router.push('/home');
+  } catch (error) {
+    console.error('❌ Error:', error);
+    Alert.alert('Error', error.message || 'Something went wrong');
+  }
+};
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* Back Button */}
-      <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-        <IconSymbol name="chevron-left" size={20} color="#7A867B" />
-        <Text style={styles.backText}>Back</Text>
-      </TouchableOpacity>
-
-      {/* Icon */}
-      <View style={styles.iconCircle}>
-        <Text style={styles.icon}>👶</Text>
-      </View>
-
-      {/* Title & Subtitle */}
-      <Text style={styles.title}>Create Baby Profile</Text>
-      <Text style={styles.subtitle}>Tell us about your little one</Text>
-
-      {/* Baby's Name */}
-      <Text style={styles.label}>Baby's Name</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter baby's name"
-        placeholderTextColor="#7A867B"
-        value={name}
-        onChangeText={setName}
-      />
-
-      {/* Date of Birth */}
-      <Text style={styles.label}>Date of Birth</Text>
-      <View style={styles.dobRow}>
-        <TextInput
-          style={styles.input}
-          placeholder="mm/dd/yyyy"
-          placeholderTextColor="#7A867B"
-          value={dob}
-          editable={false}
-        />
-        <TouchableOpacity
-          style={styles.calendarBtn}
-          onPress={() => setPickerMode('date')}
-        >
-          <IconSymbol name="calendar" size={18} color="#687076" />
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <IconSymbol name="arrow.left" size={22} color="#687076" />
         </TouchableOpacity>
+        <Text style={styles.headerTitle}>Feeding Log</Text>
+        <View style={{ width: 22 }} />
       </View>
 
-      {/* DateTimePicker */}
-      {pickerMode && (
-        <DateTimePicker
-          value={dob ? new Date(dob) : new Date()}
-          mode="date"
-          maximumDate={new Date()}
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={handlePickerChange}
-        />
-      )}
-
-      {/* Gender Selection */}
-      <Text style={styles.label}>Gender</Text>
-      <View style={styles.genderRow}>
-        {['Male', 'Female'].map((option) => (
+      {/* Feeding Type */}
+      <Text style={styles.label}>Feeding Type</Text>
+      <View style={styles.row}>
+        {['Breast', 'Bottle', 'Formula'].map(type => (
           <TouchableOpacity
-            key={option}
-            style={styles.genderOption}
-            onPress={() => setGender(option)}
+            key={type}
+            style={[styles.selectBtn, feedingType === type && styles.selectBtnActive]}
+            onPress={() => setFeedingType(type)}
           >
-            <View
-              style={[
-                styles.radioCircle,
-                gender === option && styles.radioSelected,
-              ]}
+            <IconSymbol
+              name={
+                type === 'Breast' ? 'heart.fill' : type === 'Bottle' ? 'drop.fill' : 'testtube.2'
+              }
+              size={18}
+              color={feedingType === type ? '#fff' : '#687076'}
             />
-            <Text style={styles.genderText}>{option}</Text>
+            <Text style={[styles.selectBtnText, feedingType === type && styles.selectBtnTextActive]}>
+              {type}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {/* Info Box */}
-      <View style={styles.infoBox}>
-        <IconSymbol name="info" size={18} color="#D4C5B3" style={styles.infoIcon} />
-        <View style={{ flex: 1 }}>
-          <Text style={styles.infoTitle}>Why we need this info</Text>
-          <Text style={styles.infoText}>
-            We'll use your baby's age to provide personalized suggestions and track developmental milestones.
-          </Text>
-        </View>
+      {/* Breast Side */}
+      {feedingType === 'Breast' && (
+        <>
+          <Text style={styles.label}>Side (Breast)</Text>
+          <View style={styles.row}>
+            {['Left', 'Right', 'Both'].map(s => (
+              <TouchableOpacity
+                key={s}
+                style={[styles.selectBtn, side === s && styles.selectBtnActive]}
+                onPress={() => setSide(s)}
+              >
+                <Text style={[styles.selectBtnText, side === s && styles.selectBtnTextActive]}>
+                  {s}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </>
+      )}
+
+      {/* Amount */}
+      {(feedingType === 'Bottle' || feedingType === 'Formula') && (
+        <>
+          <Text style={styles.label}>Amount</Text>
+          <View style={styles.row}>
+            <TextInput
+              style={styles.amountInput}
+              value={amount}
+              onChangeText={setAmount}
+              keyboardType="numeric"
+              placeholder="0"
+            />
+            <TouchableOpacity
+              style={styles.unitBtn}
+              onPress={() => setUnit(unit === 'oz' ? 'ml' : 'oz')}
+            >
+              <Text style={styles.unitText}>{unit}</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
+
+      {/* Time + Date Picker */}
+      <Text style={styles.label}>Time</Text>
+      <View style={styles.timeRow}>
+        <TouchableOpacity style={styles.timeInput} onPress={() => showPicker('time')}>
+          <Text style={styles.inputText}>{formatTime(dateTime)}</Text>
+        </TouchableOpacity>
+        <IconSymbol name="clock" size={18} color="#687076" />
+        <TouchableOpacity style={styles.dateInput} onPress={() => showPicker('date')}>
+          <Text style={styles.inputText}>{formatDate(dateTime)}</Text>
+        </TouchableOpacity>
+        <IconSymbol name="calendar" size={18} color="#687076" />
       </View>
 
-      {/* Next Button */}
-      <TouchableOpacity
-        style={[
-          styles.nextBtn,
-          !(name && dob && gender) && styles.nextBtnDisabled,
-        ]}
-        onPress={handlePress}
-        disabled={!(name && dob && gender)}
-      >
-        <Text style={styles.nextBtnText}>Next</Text>
-      </TouchableOpacity>
+      {/* Shared DateTime Picker (fixed height to avoid flicker) */}
+      <View style={{ height: pickerVisible ? 220 : 0, overflow: 'hidden' }}>
+        {pickerVisible && (
+          <DateTimePicker
+            value={dateTime}
+            mode={pickerMode}
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={handlePickerChange}
+          />
+        )}
+      </View>
 
-      {/* Link to Login */}
-      <TouchableOpacity onPress={() => router.push('/auth/login')}>
-        <Text style={styles.loginLink}>
-          Already have an account?{' '}
-          <Text style={styles.loginLinkBold}>Log in</Text>
-        </Text>
-      </TouchableOpacity>
+      {/* Duration */}
+      <Text style={styles.label}>Duration</Text>
+      <View style={styles.row}>
+        <TextInput
+          style={styles.durationInput}
+          value={duration}
+          onChangeText={setDuration}
+          keyboardType="numeric"
+          placeholder="e.g. 15"
+        />
+        <Text style={styles.durationText}>minutes</Text>
+      </View>
 
-      {/* Privacy */}
-      <Text style={styles.privacyText}>Your data stays private and secure</Text>
+      {/* Notes */}
+      <Text style={styles.label}>Notes (Optional)</Text>
+      <TextInput
+        style={styles.notesInput}
+        value={notes}
+        onChangeText={setNotes}
+        placeholder="Add any notes about this feeding..."
+        multiline
+      />
+
+      {/* Save Button */}
+      <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
+        <Text style={styles.saveBtnText}>Save</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    padding: 20,
+    backgroundColor: '#fff',
     flexGrow: 1,
-    backgroundColor: '#F9F9F7',
-    padding: 24,
-    paddingTop: 76,
-    alignItems: 'center',
   },
-  backButton: {
-    position: 'absolute',
-    top: 44,
-    left: 16,
+  header: {
+    paddingTop: 44,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
   },
-  backText: {
-    marginLeft: 6,
-    color: '#7A867B',
-    fontSize: 15,
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#11181C',
   },
-  iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#E1D3C1',
+  label: { fontSize: 15, fontWeight: '500', marginTop: 18, marginBottom: 8, color: '#11181C' },
+
+  row: { flexDirection: 'row', gap: 8, marginBottom: 8, alignItems: 'center' },
+  timeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  timeInput: {
+    width: 100,
+    backgroundColor: '#F7F8F9',
+    borderRadius: 8,
+    padding: 12,
+  },
+  dateInput: {
+    width: 110,
+    backgroundColor: '#F7F8F9',
+    borderRadius: 8,
+    padding: 12,
+  },
+  inputText: { fontSize: 15, color: '#11181C' },
+
+  selectBtn: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
-  },
-  icon: {
-    fontSize: 36,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#2D3A2E',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: '#7A867B',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  label: {
-    fontSize: 15,
-    color: '#2D3A2E',
-    fontWeight: '500',
-    alignSelf: 'flex-start',
-    marginBottom: 6,
-    marginTop: 12,
-  },
-  input: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E8E8E8',
-    borderWidth: 1,
+    backgroundColor: '#F7F8F9',
     borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    fontSize: 15,
-    color: '#2D3A2E',
-    marginBottom: 8,
-    width: '100%',
+    paddingVertical: 14,
+    gap: 6,
   },
-  dobRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-  },
-  calendarBtn: {
-    position: 'absolute',
-    right: 12,
-    top: 12,
-    padding: 4,
-  },
-  genderRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    width: '100%',
-    gap: 24,
-    marginTop: 4,
-  },
-  genderOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  radioCircle: {
-    height: 16,
-    width: 16,
+  selectBtnActive: { backgroundColor: '#11181C' },
+  selectBtnText: { fontSize: 15, color: '#687076' },
+  selectBtnTextActive: { color: '#fff', fontWeight: 'bold' },
+
+  amountInput: {
+    flex: 1,
+    backgroundColor: '#F7F8F9',
     borderRadius: 8,
-    borderWidth: 1.5,
-    borderColor: '#7A867B',
-    marginRight: 6,
-  },
-  radioSelected: {
-    backgroundColor: '#D4C5B3',
-    borderColor: '#D4C5B3',
-  },
-  genderText: {
-    fontSize: 14,
-    color: '#2D3A2E',
-  },
-  infoBox: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: '#F5EDE1',
-    borderRadius: 10,
     padding: 12,
-    marginTop: 16,
-    marginBottom: 24,
-    width: '100%',
-  },
-  infoIcon: {
-    marginRight: 10,
-    marginTop: 2,
-  },
-  infoTitle: {
-    fontWeight: 'bold',
-    color: '#2D3A2E',
     fontSize: 15,
-    marginBottom: 2,
   },
-  infoText: {
-    color: '#7A867B',
-    fontSize: 14,
+  unitBtn: {
+    backgroundColor: '#F7F8F9',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
-  nextBtn: {
-    width: '100%',
-    backgroundColor: '#D4C5B3',
+  unitText: { fontSize: 15, color: '#687076' },
+
+  durationInput: {
+    width: 60,
+    backgroundColor: '#F7F8F9',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 15,
+  },
+  durationText: { fontSize: 15, color: '#687076' },
+
+  notesInput: {
+    backgroundColor: '#F7F8F9',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 15,
+    minHeight: 60,
+    marginBottom: 8,
+  },
+
+  saveBtn: {
+    backgroundColor: '#11181C',
     borderRadius: 10,
-    paddingVertical: 16,
+    paddingVertical: 14,
     alignItems: 'center',
     marginTop: 16,
-    marginBottom: 12,
+    marginBottom: 24,
   },
-  nextBtnDisabled: {
-    backgroundColor: '#B0A68D',
-  },
-  nextBtnText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  loginLink: {
-    color: '#7A867B',
-    fontSize: 14,
-    marginTop: 16,
-    textAlign: 'center',
-  },
-  loginLinkBold: {
-    fontWeight: 'bold',
-    color: '#2D3A2E',
-  },
-  privacyText: {
-    color: '#7A867B',
-    fontSize: 13,
-    textAlign: 'center',
-    marginTop: 12,
-  },
+  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 });

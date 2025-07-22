@@ -1,8 +1,9 @@
 const { z } = require('zod');
 const { db } = require('../../firebaseAdmin'); // adjust path if needed
 
-
+// Extend baseSchema to include userId
 const baseSchema = z.object({
+  userId: z.string().min(1, 'Missing userId'), // ✅ Require userId
   feedingType: z.enum(['Breast', 'Bottle', 'Formula']),
   side: z.string().nullable(),
   amount: z.string().nullable(),
@@ -12,6 +13,7 @@ const baseSchema = z.object({
   timestamp: z.string().refine(val => !isNaN(Date.parse(val)), { message: 'Invalid timestamp' }),
 });
 
+// Additional validations
 const feedingSchema = baseSchema.superRefine((data, ctx) => {
   if (data.feedingType === 'Breast') {
     if (!data.side) {
@@ -43,24 +45,29 @@ async function saveFeedingLog(req, res) {
   try {
     const parsed = feedingSchema.parse(req.body);
 
-    // Save to Firestore
+    // Save to Firestore under 'feedingLogs'
     const docRef = await db.collection('feedingLogs').add(parsed);
 
     return res.status(201).json({ message: 'Feeding log saved', id: docRef.id });
   } catch (error) {
     console.error(error);
-    // if validation error from zod
     if (error.errors) {
       return res.status(400).json({ error: error.errors[0].message });
     }
-    // else Firestore or other errors
     return res.status(500).json({ error: error.message || 'Internal server error' });
   }
 }
 
 async function getFeedingLogs(req, res) {
   try {
-    const snapshot = await db.collection('feedingLogs').get();
+    const { userId } = req.query;
+
+    let query = db.collection('feedingLogs');
+    if (userId) {
+      query = query.where('userId', '==', userId); // Optional filtering
+    }
+
+    const snapshot = await query.get();
     const logs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     res.json(logs);
   } catch (error) {
