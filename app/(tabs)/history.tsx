@@ -11,7 +11,8 @@ import {
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import Modal from 'react-native-modal';
 import { Calendar } from 'react-native-calendars';
-
+ import { getAuth } from 'firebase/auth';
+ 
 const TABS = ['All', 'Feeding', 'Diaper', 'Sleep'];
   const getLocalDateString = () => {
   const today = new Date();
@@ -38,21 +39,33 @@ export default function HistoryScreen() {
     toggleModal();
   };
 
-  const fetchLogs = async (date) => {
-    setLoading(true);
-    try {
-      const response = await fetch(`http://192.168.1.9:3000/history/${date}`);
-      if (!response.ok) throw new Error('Failed to fetch logs');
-      const data = await response.json();
-      setLogs(data);
-    } catch (error) {
-      console.error(error);
-      setLogs([]);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+
+const fetchLogs = async (date) => {
+  setLoading(true);
+  try {
+    const user = getAuth().currentUser;
+    if (!user) throw new Error('User not authenticated');
+
+    const token = await user.getIdToken();
+
+    const response = await fetch(`http://192.168.1.9:3000/history/${date}`, {
+      headers: {
+        Authorization: `Bearer ${token}`, // 🔐 pass the token
+      },
+    });
+
+    if (!response.ok) throw new Error('Failed to fetch logs');
+
+    const data = await response.json();
+    setLogs(data);
+  } catch (error) {
+    console.error(error);
+    setLogs([]);
+  } finally {
+    setLoading(false);
+    setRefreshing(false);
+  }
+};
 
   useEffect(() => {
     fetchLogs(selectedDate);

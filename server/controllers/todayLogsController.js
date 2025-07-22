@@ -1,6 +1,5 @@
 const admin = require('firebase-admin');
 const { db } = require('../../firebaseAdmin'); // adjust path if needed
-const { Timestamp } = require('firebase-admin/firestore');
 
 function toDate(timestamp) {
   return timestamp.toDate ? timestamp.toDate() : new Date(timestamp);

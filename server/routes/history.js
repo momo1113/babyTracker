@@ -5,6 +5,7 @@ const { getLogsByDate } = require('../controllers/historyController');
 const verifyFirebaseToken = require('../middleware/verifyFirebaseToken');
 
 
-router.get('/:date', verifyFirebaseToken, getLogsByDate); // date format: YYYY-MM-DD
+// Add ':date' param here on this route path
+router.get('/:date', verifyFirebaseToken, getLogsByDate);
 
 module.exports = router;
