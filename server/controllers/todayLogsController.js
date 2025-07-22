@@ -1,3 +1,4 @@
+const admin = require('firebase-admin');
 const { db } = require('../../firebaseAdmin'); // adjust path if needed
 
 function toDate(timestamp) {
@@ -11,29 +12,33 @@ async function getTodayLogs(req, res) {
       return res.status(401).json({ error: 'Unauthorized: Missing userId' });
     }
 
+    // Use Firestore Timestamp objects
     const now = new Date();
     const startOfDay = new Date(now);
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(now);
     endOfDay.setHours(23, 59, 59, 999);
 
+    const startTimestamp = admin.firestore.Timestamp.fromDate(startOfDay);
+    const endTimestamp = admin.firestore.Timestamp.fromDate(endOfDay);
+
     const [feedingSnap, diaperSnap, sleepSnap] = await Promise.all([
       db.collection('feedingLogs')
         .where('userId', '==', userId)
-        .where('timestamp', '>=', startOfDay.toISOString())
-        .where('timestamp', '<=', endOfDay.toISOString())
+        .where('timestamp', '>=', startTimestamp)
+        .where('timestamp', '<=', endTimestamp)
         .get(),
 
       db.collection('diaperLogs')
         .where('userId', '==', userId)
-        .where('timestamp', '>=', startOfDay.toISOString())
-        .where('timestamp', '<=', endOfDay.toISOString())
+        .where('timestamp', '>=', startTimestamp)
+        .where('timestamp', '<=', endTimestamp)
         .get(),
 
       db.collection('sleepLogs')
         .where('userId', '==', userId)
-        .where('timestamp', '>=', startOfDay.toISOString())
-        .where('timestamp', '<=', endOfDay.toISOString())
+        .where('timestamp', '>=', startTimestamp)
+        .where('timestamp', '<=', endTimestamp)
         .get(),
     ]);
 
@@ -71,14 +76,8 @@ async function getTodayLogs(req, res) {
   }
 }
 
-// ... formatFeedingDetails, formatDiaperDetails, formatSleepDetails unchanged
+// --- Format helpers unchanged ---
 
-module.exports = {
-  getTodayLogs,
-};
-
-
-// Helpers to format details per type
 function formatFeedingDetails(data) {
   const details = [];
 
