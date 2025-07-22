@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, TextInput, StyleSheet, ScrollView, Platfo
 import { useRouter } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { getAuth } from 'firebase/auth';
 
 export default function DiaperLogScreen() {
   const router = useRouter();
@@ -16,24 +17,34 @@ export default function DiaperLogScreen() {
 
   const [pickerMode, setPickerMode] = useState<'time' | 'date' | null>(null);
 
-  const handleSave = async () => {
+ const handleSave = async () => {
+  const auth = getAuth();
+  const user = auth.currentUser;
+
+  if (!user) {
+    Alert.alert('Authentication Error', 'Please log in first.');
+    router.push('/auth/login');
+    return;
+  }
+
+  const token = await user.getIdToken();
+
   const payload = {
+    userId: user.uid, // ✅ include userId
     type,
-    time,
-    date,
+    consistency: type !== 'Pee' ? consistency : null,
+    color: type !== 'Pee' ? color : null,
     notes,
     timestamp: new Date().toISOString(),
   };
 
-  if (type !== 'Pee') {
-    payload.consistency = consistency;
-    payload.color = color;
-  }
-
   try {
     const response = await fetch('http://192.168.1.9:3000/diaper', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`, // ✅ token for backend auth
+      },
       body: JSON.stringify(payload),
     });
 
@@ -46,10 +57,8 @@ export default function DiaperLogScreen() {
     const data = await response.json();
     console.log('Save successful:', data);
 
-    // Show success message
     if (Platform.OS === 'android') {
       ToastAndroid.show('Diaper log saved successfully!', ToastAndroid.SHORT);
-      // Small delay to let toast show before navigating back
       setTimeout(() => router.back(), 1000);
     } else {
       Alert.alert('Success', 'Diaper log saved successfully!');
@@ -60,7 +69,6 @@ export default function DiaperLogScreen() {
     alert('Network error, please try again.');
   }
 };
-
 
   const onSelectType = (t) => {
     setType(t);
