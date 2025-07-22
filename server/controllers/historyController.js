@@ -31,7 +31,6 @@ function formatSleepDuration(startTime, endTime) {
 }
 
 exports.getLogsByDate = async (req, res) => {
-  console.log('User:', req.user); // Debugging line to check user object
   try {
     const userId = req.user.uid;  // assuming user ID is set on req.user by auth middleware
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });

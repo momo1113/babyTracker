@@ -69,7 +69,6 @@ export default function BabyProfileScreen() {
       });
 
       const data = await response.json();
-      console.log('Save baby profile response:', data);
 
       if (!response.ok) {
         Alert.alert('Error', data.error || 'Failed to save baby profile');

@@ -63,8 +63,6 @@ const saveBabyProfile = async (req, res) => {
     const docRef = db.collection('babyProfiles').doc(userId);
     await docRef.set(entry);
 
-    console.log(`Saved baby profile for user ${userId}:`, entry);
-
     return res.status(200).json({ message: 'Baby profile saved successfully', data: entry });
   } catch (error) {
     console.error('Error saving baby profile:', error);
