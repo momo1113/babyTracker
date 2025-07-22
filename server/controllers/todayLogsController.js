@@ -51,7 +51,6 @@ async function getTodayLogs(req, res) {
       timestamp: toDate(doc.data().timestamp),
     }));
 
-      console.log('feedingLogs',feedingLogs);
     const diaperLogs = diaperSnap.docs.map(doc => ({
       id: doc.id,
       type: 'Diaper',

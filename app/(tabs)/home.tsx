@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { getAuth } from 'firebase/auth';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import duration from 'dayjs/plugin/duration';
@@ -121,6 +121,14 @@ export default function HomeScreen() {
     fetchTimeline();
     fetchBabyProfile();
   };
+
+  // Inside your component:
+useFocusEffect(
+  useCallback(() => {
+    fetchTimeline();
+    fetchBabyProfile();
+  }, [fetchTimeline, fetchBabyProfile])
+);
 
   return (
     <ScrollView

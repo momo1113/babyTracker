@@ -1,20 +1,22 @@
 const { z } = require('zod');
 const { db } = require('../../firebaseAdmin'); // adjust path if needed
+const { Timestamp } = require('firebase-admin/firestore');
 
 const diaperSchema = z.object({
+  userId: z.string(),
   type: z.enum(['Pee', 'Poop', 'Both']),
-  time: z.string().regex(/^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$/i, 'Invalid time format'),
-  date: z.string().refine(val => !isNaN(new Date(val).getTime()), 'Invalid date'),
-  consistency: z.string().optional(),
-  color: z.string().optional(),
+  consistency: z.string().nullable().optional(),
+  color: z.string().nullable().optional(),
   notes: z.string().optional(),
+  timestamp: z.string().refine(val => !isNaN(new Date(val).getTime()), 'Invalid timestamp'),
 });
+
 
 async function saveDiaperLog(req, res) {
   try {
     const parsed = diaperSchema.parse(req.body);
 
-    // Extra validation
+    // Extra validation for poop or both
     if (parsed.type !== 'Pee') {
       if (!parsed.consistency) {
         return res.status(400).json({ error: 'Consistency is required for poop or both' });
@@ -24,19 +26,29 @@ async function saveDiaperLog(req, res) {
       }
     }
 
+    // Convert ISO string to Firestore Timestamp (preserving local time)
+    const timestamp = Timestamp.fromDate(new Date(parsed.timestamp));
+
     const entry = {
-      ...parsed,
-      timestamp: new Date().toISOString(),
+      userId: parsed.userId,
+      type: parsed.type,
+      consistency: parsed.consistency || null,
+      color: parsed.color || null,
+      notes: parsed.notes || '',
+      timestamp,
     };
 
-    // Save to Firestore collection "diaperLogs"
     const docRef = await db.collection('diaperLogs').add(entry);
 
     return res.status(201).json({ message: 'Diaper log saved', id: docRef.id, data: entry });
   } catch (err) {
+    console.error(err);
     return res.status(400).json({ error: err.errors?.[0]?.message || 'Validation failed' });
   }
 }
+
+module.exports = { saveDiaperLog };
+
 
 async function getDiaperLogs(req, res) {
   try {

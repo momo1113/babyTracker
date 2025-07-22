@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet, ScrollView, Platform, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, StyleSheet, ScrollView, Platform, Alert, ToastAndroid } from 'react-native';
 import { useRouter } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { IconSymbol } from '@/components/ui/IconSymbol';
@@ -17,7 +17,7 @@ export default function DiaperLogScreen() {
 
   const [pickerMode, setPickerMode] = useState<'time' | 'date' | null>(null);
 
- const handleSave = async () => {
+const handleSave = async () => {
   const auth = getAuth();
   const user = auth.currentUser;
 
@@ -29,13 +29,16 @@ export default function DiaperLogScreen() {
 
   const token = await user.getIdToken();
 
+  // Use local time here by creating Date and calling toISOString()
+  const localTimestamp = new Date(); // local time JS Date object
+
   const payload = {
-    userId: user.uid, // ✅ include userId
-    type,
+    userId: user.uid,
+    type, // from your form state
     consistency: type !== 'Pee' ? consistency : null,
     color: type !== 'Pee' ? color : null,
-    notes,
-    timestamp: new Date().toISOString(),
+    notes: notes || '',
+    timestamp: localTimestamp.toISOString(), // ISO string with local time offset
   };
 
   try {
@@ -43,32 +46,29 @@ export default function DiaperLogScreen() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`, // ✅ token for backend auth
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      alert(`Error: ${errorData.error || 'Save failed'}`);
+      Alert.alert('Error', errorData.error || 'Save failed');
       return;
     }
 
-    const data = await response.json();
-    console.log('Save successful:', data);
-
     if (Platform.OS === 'android') {
       ToastAndroid.show('Diaper log saved successfully!', ToastAndroid.SHORT);
-      setTimeout(() => router.back(), 1000);
     } else {
       Alert.alert('Success', 'Diaper log saved successfully!');
-      router.back();
     }
+
+    router.back(); // or your navigation back
   } catch (error) {
-    console.error('Network error:', error);
-    alert('Network error, please try again.');
+    Alert.alert('Network Error', 'Please try again.');
   }
 };
+
 
   const onSelectType = (t) => {
     setType(t);
