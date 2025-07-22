@@ -10,34 +10,13 @@ import {
   Modal,
   Pressable,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native'; // make sure react-navigation/native is installed
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useRouter } from 'expo-router';
+import { getAuth } from 'firebase/auth';
 
-function calculateAge(dobStr: string) {
-  if (!dobStr) return '';
-  const dob = new Date(dobStr);
-  const now = new Date();
-  let years = now.getFullYear() - dob.getFullYear();
-  let months = now.getMonth() - dob.getMonth();
-  let days = now.getDate() - dob.getDate();
-
-  if (days < 0) {
-    months--;
-    days += new Date(now.getFullYear(), now.getMonth(), 0).getDate();
-  }
-  if (months < 0) {
-    years--;
-    months += 12;
-  }
-
-  let ageStr = '';
-  if (years > 0) ageStr += `${years} year${years > 1 ? 's' : ''}, `;
-  if (months > 0) ageStr += `${months} month${months > 1 ? 's' : ''}, `;
-  ageStr += `${days} day${days !== 1 ? 's' : ''} old`;
-  return ageStr;
-}
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -46,20 +25,42 @@ export default function ProfileScreen() {
   const [babyProfile, setBabyProfile] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const fetchBabyProfile = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('http://192.168.1.9:3000/baby-profile'); // Replace with your real API
-      if (!response.ok) throw new Error('Failed to fetch baby profile');
-      const json = await response.json();
-      setBabyProfile(json.data);
-    } catch (error) {
-      alert('Error loading baby profile');
-      console.error(error);
-    } finally {
-      setLoading(false);
+
+const fetchBabyProfile = async () => {
+  const auth = getAuth();
+  const user = auth.currentUser;
+
+  if (!user) {
+    Alert.alert('Authentication Error', 'Please log in first.');
+    return;
+  }
+
+  const token = await user.getIdToken();
+  const BASE_URL = 'http://192.168.1.9:3000';
+
+  setLoading(true);
+  try {
+    const response = await fetch(`${BASE_URL}/baby-profile`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`, // secure token
+      },
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to fetch baby profile');
     }
-  };
+
+    const data = await response.json();
+    setBabyProfile(data);
+  } catch (error) {
+    Alert.alert('Error loading baby profile', error.message || 'Something went wrong');
+    console.error('❌ fetchBabyProfile Error:', error);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   useFocusEffect(
     useCallback(() => {
@@ -121,25 +122,21 @@ export default function ProfileScreen() {
                   style={styles.avatar}
                 />
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.name}>Baby</Text>
-                  <Text style={styles.subText}>{calculateAge(babyProfile.dob)}</Text>
+                <Text style={styles.name}>{babyProfile.name?.trim() || 'Baby'}</Text>
+                <Text style={styles.subText}>{babyProfile.age}</Text>
                 </View>
               </View>
 
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Date of Birth</Text>
                 <Text style={styles.infoValue}>
-                  {new Date(babyProfile.dob).toLocaleDateString(undefined, {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
+                 <Text style={styles.infoValue}>{babyProfile.dob}</Text>
                 </Text>
               </View>
 
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Age</Text>
-                <Text style={styles.infoValue}>{calculateAge(babyProfile.dob)}</Text>
+                <Text style={styles.infoValue}>{babyProfile.age}</Text>
               </View>
 
               <View style={styles.infoRow}>
@@ -152,48 +149,60 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        {/* Latest Growth Section */}
-        <View style={styles.growthSection}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-            <IconSymbol name="arrow.forward" size={18} color="#2D3A2E" />
-            <Text style={styles.growthTitle}>Latest Growth</Text>
-          </View>
+   {/* Latest Growth Section */}
+<View style={styles.growthSection}>
+  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+    <IconSymbol name="arrow.forward" size={18} color="#2D3A2E" />
+    <Text style={styles.growthTitle}>Latest Growth</Text>
+  </View>
 
-          {loading ? (
-            <ActivityIndicator size="small" color="#3B322C" />
-          ) : latestGrowth ? (
-            <>
-              <View style={styles.growthRow}>
-                <Text style={styles.growthLabel}>Weight:</Text>
-                <Text style={styles.growthValue}>{latestGrowth.weight} lbs</Text>
-              </View>
-              <View style={styles.growthRow}>
-                <Text style={styles.growthLabel}>Height:</Text>
-                <Text style={styles.growthValue}>{latestGrowth.height} in</Text>
-              </View>
-              <View style={styles.growthRow}>
-                <Text style={styles.growthLabel}>Date:</Text>
-                <Text style={styles.growthValue}>
-                  {new Date(latestGrowth.date).toLocaleDateString()}
-                </Text>
-              </View>
-              <View style={styles.growthBtnRow}>
-                <TouchableOpacity
-                  style={styles.growthBtnOutline}
-                  onPress={() => router.push('/(screens)/growth-chart')}
-                  accessibilityLabel="View growth chart"
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <IconSymbol name="chart.bar.fill" size={16} color="#2D3A2E" />
-                    <Text style={styles.growthBtnOutlineText}>View Growth Chart</Text>
-                  </View>
-                </TouchableOpacity>
-              </View>
-            </>
-          ) : (
-            <Text style={{ color: '#867E76' }}>No growth data found.</Text>
-          )}
-        </View>
+  {loading ? (
+    <ActivityIndicator size="small" color="#3B322C" />
+  ) : babyProfile?.growthData?.length ? (
+    <>
+      {(() => {
+        const latestGrowth = babyProfile.growthData[babyProfile.growthData.length - 1];
+        return (
+          <>
+            <View style={styles.growthRow}>
+              <Text style={styles.growthLabel}>Weight:</Text>
+              <Text style={styles.growthValue}>{latestGrowth.weight} lbs</Text>
+            </View>
+            <View style={styles.growthRow}>
+              <Text style={styles.growthLabel}>Height:</Text>
+              <Text style={styles.growthValue}>{latestGrowth.height} in</Text>
+            </View>
+            <View style={styles.growthRow}>
+              <Text style={styles.growthLabel}>Date:</Text>
+              <Text style={styles.growthValue}>
+                {new Date(latestGrowth.date).toLocaleDateString(undefined, {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </Text>
+            </View>
+            <View style={styles.growthBtnRow}>
+              <TouchableOpacity
+                style={styles.growthBtnOutline}
+                onPress={() => router.push('/(screens)/growth-chart')}
+                accessibilityLabel="View growth chart"
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <IconSymbol name="chart.bar.fill" size={16} color="#2D3A2E" />
+                  <Text style={styles.growthBtnOutlineText}>View Growth Chart</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </>
+        );
+      })()}
+    </>
+  ) : (
+    <Text style={{ color: '#867E76' }}>No growth data found.</Text>
+  )}
+</View>
+
 
         {/* Support */}
         <View style={styles.section}>
