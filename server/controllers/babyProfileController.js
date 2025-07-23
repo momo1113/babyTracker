@@ -74,8 +74,7 @@ const saveBabyProfile = async (req, res) => {
 
 const getBabyProfile = async (req, res) => {
   try {
-    const userId = req.user.uid; // from verifyFirebaseToken middleware
-
+    const userId = req.user.uid;
     const docRef = admin.firestore().collection('babyProfiles').doc(userId);
     const doc = await docRef.get();
 
@@ -84,20 +83,74 @@ const getBabyProfile = async (req, res) => {
     }
 
     const data = doc.data();
+    const growthData = Array.isArray(data.growthData) ? data.growthData : [];
+
+    // Get latest growth entry
+    const latestGrowth = [...growthData]
+      .filter(entry => entry.date && entry.weight && entry.height)
+      .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+
+    let weightPercentile = null;
+    let heightPercentile = null;
+
+    if (latestGrowth && data.dob && data.gender) {
+      const dob = dayjs(data.dob);
+      const growthDate = dayjs(latestGrowth.date);
+
+      const ageInMonths = growthDate.diff(dob, 'month');
+      const gender = data.gender.toLowerCase();
+
+      // Simplified WHO reference values (girls)
+      const WHO_REFERENCE = {
+        female: {
+          weight: [3.2, 4.2, 5.1, 5.8, 6.4, 6.9, 7.3, 7.6, 7.9, 8.2], // 0-9 months
+          height: [49.1, 53.7, 57.1, 59.8, 62.1, 64, 65.7, 67.3, 68.7, 70.1],
+        },
+        male: {
+          weight: [3.3, 4.5, 5.6, 6.4, 7, 7.5, 7.9, 8.3, 8.6, 8.9],
+          height: [49.9, 54.7, 58.4, 61.4, 63.9, 65.9, 67.6, 69.2, 70.6, 72],
+        },
+      };
+
+      const estimatePercentile = (actual, reference) => {
+        const idx = Math.min(Math.max(ageInMonths, 0), reference.length - 1);
+        const mean = reference[idx];
+
+        const diff = actual - mean;
+
+        if (Math.abs(diff) < 0.3) return 50;
+        if (diff >= 1.2) return 95;
+        if (diff >= 0.7) return 85;
+        if (diff >= 0.3) return 70;
+        if (diff <= -1.2) return 5;
+        if (diff <= -0.7) return 15;
+        if (diff <= -0.3) return 30;
+        return 50;
+      };
+
+      const ref = WHO_REFERENCE[gender];
+      if (ref) {
+        weightPercentile = estimatePercentile(latestGrowth.weight, ref.weight);
+        heightPercentile = estimatePercentile(latestGrowth.height, ref.height);
+      }
+    }
 
     return res.json({
-      name: data.name, // <-- ✅ ensure this is returned
+      name: data.name,
       dob: data.dob,
       gender: data.gender,
-      growthData: data.growthData || [],
-      age: data.age || 0, // optional field
+      growthData,
+      age: data.age || 0,
       updatedAt: data.updatedAt || new Date().toISOString(),
+      weightPercentile,
+      heightPercentile,
     });
   } catch (error) {
     console.error('Error getting baby profile:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
+
 
 
 const getAllGrowthEntries = async (req, res) => {
