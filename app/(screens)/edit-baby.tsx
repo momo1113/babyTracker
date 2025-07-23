@@ -7,11 +7,18 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  Image,
+  ActivityIndicator,
+  Platform,
 } from 'react-native';
 import Modal from 'react-native-modal';
 import { Calendar } from 'react-native-calendars';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+
+import { getAuth } from 'firebase/auth';
+import { storage, ref, uploadBytes, getDownloadURL } from '../../firebaseConfig'; // Adjust path to your firebase config
 
 const GENDERS = [
   { label: 'Female', icon: 'female' },
@@ -20,39 +27,43 @@ const GENDERS = [
 
 export default function EditBabyScreen() {
   const router = useRouter();
+
+  // Baby info states
+  const [name, setName] = useState('');
+  const [photoUrl, setPhotoUrl] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
+
   const [dob, setDob] = useState('2025-03-12');
   const [isDobModalVisible, setIsDobModalVisible] = useState(false);
 
   const [gender, setGender] = useState('Female');
   const [isGenderDropdownOpen, setIsGenderDropdownOpen] = useState(false);
 
-  const [growthData, setGrowthData] = useState([
-    { date: '2025-07-01', weight: '14.2', height: '24.5' },
-  ]);
+  const [growthData, setGrowthData] = useState([{ date: '2025-07-01', weight: '14.2', height: '24.5' }]);
   const [isCalendarVisible, setIsCalendarVisible] = useState(false);
-  const [selectedEntryIndex, setSelectedEntryIndex] = useState<number | null>(null);
+  const [selectedEntryIndex, setSelectedEntryIndex] = useState(null);
   const [tempDate, setTempDate] = useState('');
 
-  // Open calendar to pick DOB
+  // Open DOB calendar modal
   const openDobCalendar = () => {
     setTempDate(dob);
     setIsDobModalVisible(true);
   };
 
-  // On DOB picked
+  // DOB selected from calendar
   const handleDobSelect = (day) => {
     setDob(day.dateString);
     setIsDobModalVisible(false);
   };
 
-  // Open calendar for growth entry date
+  // Open calendar for growth entry date selection
   const openCalendar = (index) => {
     setSelectedEntryIndex(index);
     setTempDate(growthData[index].date || '');
     setIsCalendarVisible(true);
   };
 
-  // On growth date selected
+  // Growth entry date selected
   const handleDateSelect = (day) => {
     if (selectedEntryIndex !== null) {
       const newData = [...growthData];
@@ -64,70 +75,143 @@ export default function EditBabyScreen() {
     setTempDate('');
   };
 
-  // Add growth entry with validation
+  // Add new growth entry with validation
   const addGrowthEntry = () => {
-    // Validate all existing entries have weight and height filled
     for (let i = 0; i < growthData.length; i++) {
       const { weight, height } = growthData[i];
       if (!weight || !height) {
-        Alert.alert(
-          'Validation Error',
-          `Please fill weight and height for entry #${i + 1} before adding a new one.`
-        );
+        Alert.alert('Validation Error', `Please fill weight and height for entry #${i + 1} before adding a new one.`);
         return;
       }
     }
     setGrowthData([...growthData, { date: '', weight: '', height: '' }]);
   };
 
-  const handleSave = async () => {
-  // Validation: make sure all growth entries have weight & height
-  for (const [i, entry] of growthData.entries()) {
-    if (!entry.weight || !entry.height) {
-      Alert.alert('Validation Error', `Please enter weight and height for growth entry ${i + 1}.`);
+  // Upload image to Firebase Storage
+  const uploadImageAsync = async (uri, filename) => {
+    const response = await fetch(uri);
+    const blob = await response.blob();
+
+    const imageRef = ref(storage, `baby-profile-pictures/${filename}`);
+    await uploadBytes(imageRef, blob);
+    const downloadUrl = await getDownloadURL(imageRef);
+    return downloadUrl;
+  };
+
+  // Launch image picker & upload selected image
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission denied', 'Permission to access photo library is required!');
       return;
     }
-  }
 
-  // Basic DOB and Gender validation
-  if (!dob) {
-    Alert.alert('Validation Error', 'Please enter Date of Birth.');
-    return;
-  }
-  if (!gender) {
-    Alert.alert('Validation Error', 'Please select Gender.');
-    return;
-  }
-
-  const payload = { dob, gender, growthData };
-
-  const BASE_URL = 'http://192.168.1.9:3000';
-
-  try {
-    const response = await fetch(`${BASE_URL}/baby-profile`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to save baby profile.');
+    if (!result.cancelled) {
+      setUploadingImage(true);
+
+      const auth = getAuth();
+      const user = auth.currentUser;
+      if (!user) {
+        Alert.alert('Authentication Error', 'Please log in first.');
+        router.push('/auth/login');
+        setUploadingImage(false);
+        return;
+      }
+
+      const filename = `${user.uid}_${Date.now()}.jpg`;
+
+      try {
+        const uploadedUrl = await uploadImageAsync(result.uri, filename);
+        setPhotoUrl(uploadedUrl);
+      } catch (error) {
+        Alert.alert('Upload Error', 'Failed to upload image.');
+        console.error('Image upload error:', error);
+      } finally {
+        setUploadingImage(false);
+      }
+    }
+  };
+
+  // Save baby profile to backend with Firebase auth token
+  const handleSave = async () => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (!user) {
+      Alert.alert('Authentication Error', 'Please log in first.');
+      router.push('/auth/login');
+      return;
     }
 
-    await response.json();
+    if (!name.trim()) {
+      Alert.alert('Validation Error', 'Please enter the baby name.');
+      return;
+    }
 
-    Alert.alert('Success', 'Baby profile saved successfully!');
-    router.back();
-  } catch (error) {
-    console.error('❌ Error:', error);
-    Alert.alert('Error', error.message || 'Something went wrong');
-  }
-};
+    for (const [i, entry] of growthData.entries()) {
+      if (!entry.weight || !entry.height) {
+        Alert.alert('Validation Error', `Please enter weight and height for entry ${i + 1}.`);
+        return;
+      }
+    }
 
+    if (!dob) {
+      Alert.alert('Validation Error', 'Please enter Date of Birth.');
+      return;
+    }
+
+    if (!gender) {
+      Alert.alert('Validation Error', 'Please select Gender.');
+      return;
+    }
+
+    try {
+      const token = await user.getIdToken();
+
+      const payload = {
+        userId: user.uid,
+        name: name.trim(),
+        photoUrl: photoUrl.trim(),
+        dob,
+        gender,
+        growthData,
+      };
+
+      const BASE_URL = 'http://192.168.1.9:3000';
+
+      const response = await fetch(`${BASE_URL}/baby-profile`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save baby profile.');
+      }
+
+      await response.json();
+
+      Alert.alert('Success', 'Baby profile saved successfully!');
+      router.back();
+    } catch (error) {
+      console.error('❌ Error:', error);
+      Alert.alert('Error', error.message || 'Something went wrong');
+    }
+  };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       {/* Back Button */}
       <TouchableOpacity
         style={styles.backButton}
@@ -140,8 +224,40 @@ export default function EditBabyScreen() {
 
       <Text style={styles.header}>✏️ Edit Baby Profile</Text>
 
+      {/* Name Input */}
+      <Text style={styles.label}>Baby Name</Text>
+      <TextInput
+        style={styles.inputWithIcon}
+        placeholder="Enter baby's name"
+        value={name}
+        onChangeText={setName}
+        accessibilityLabel="Baby name input"
+      />
+
+      {/* Profile Picture Picker */}
+      <Text style={styles.label}>Profile Picture</Text>
+      <TouchableOpacity
+        style={[styles.addBtn, { marginBottom: 12 }]}
+        onPress={pickImage}
+        accessibilityLabel="Select profile picture"
+      >
+        <Text style={styles.addBtnText}>
+          {photoUrl ? 'Change Profile Picture' : 'Choose Profile Picture'}
+        </Text>
+      </TouchableOpacity>
+
+      {uploadingImage ? (
+        <ActivityIndicator size="large" color="#3B322C" style={{ marginBottom: 16 }} />
+      ) : photoUrl !== '' ? (
+        <Image
+          source={{ uri: photoUrl }}
+          style={{ width: 100, height: 100, borderRadius: 50, alignSelf: 'center', marginBottom: 16 }}
+        />
+      ) : null}
+
+      {/* DOB Input */}
       <Text style={styles.label}>Date of Birth</Text>
-      <TouchableOpacity onPress={openDobCalendar} activeOpacity={0.7}>
+      <TouchableOpacity onPress={openDobCalendar} activeOpacity={0.7} accessibilityLabel="Select date of birth">
         <View style={styles.inputWithIcon}>
           <Text style={styles.inputText}>{dob}</Text>
           <IconSymbol name="calendar" size={20} color="#687076" />
@@ -191,6 +307,7 @@ export default function EditBabyScreen() {
         </View>
       </Modal>
 
+      {/* Gender Input */}
       <Text style={styles.label}>Gender</Text>
       <TouchableOpacity
         style={styles.genderInput}
@@ -214,39 +331,39 @@ export default function EditBabyScreen() {
         )}
       </TouchableOpacity>
 
-    {isGenderDropdownOpen && (
-      <View style={styles.genderDropdown}>
-        {GENDERS.map(({ label }) => {
-          const selected = gender === label;
-          return (
-            <TouchableOpacity
-              key={label}
-              style={[
-                styles.genderDropdownItem,
-                selected && styles.genderDropdownItemSelected,
-              ]}
-              onPress={() => {
-                setGender(label);
-                setIsGenderDropdownOpen(false);
-              }}
-              accessibilityLabel={`Select gender ${label}`}
-            >
-              {/* Removed icon here */}
-              <Text style={styles.genderDropdownText}>{label}</Text>
-              {selected && (
-                <IconSymbol
-                  name="checkmark.circle"
-                  size={24}
-                  color="#3CB371" // mediumseagreen
-                  style={{ marginLeft: 'auto' }}
-                />
-              )}
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-    )}
+      {isGenderDropdownOpen && (
+        <View style={styles.genderDropdown}>
+          {GENDERS.map(({ label }) => {
+            const selected = gender === label;
+            return (
+              <TouchableOpacity
+                key={label}
+                style={[
+                  styles.genderDropdownItem,
+                  selected && styles.genderDropdownItemSelected,
+                ]}
+                onPress={() => {
+                  setGender(label);
+                  setIsGenderDropdownOpen(false);
+                }}
+                accessibilityLabel={`Select gender ${label}`}
+              >
+                <Text style={styles.genderDropdownText}>{label}</Text>
+                {selected && (
+                  <IconSymbol
+                    name="checkmark.circle"
+                    size={24}
+                    color="#3CB371"
+                    style={{ marginLeft: 'auto' }}
+                  />
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
 
+      {/* Growth Entries */}
       <Text style={styles.sectionTitle}>📈 Growth Entries</Text>
 
       <ScrollView
@@ -337,6 +454,7 @@ export default function EditBabyScreen() {
         </View>
       </Modal>
 
+      {/* Add growth entry button */}
       <TouchableOpacity
         style={styles.addBtn}
         onPress={addGrowthEntry}
@@ -346,13 +464,15 @@ export default function EditBabyScreen() {
         <Text style={styles.addBtnText}>+ Add Growth Entry</Text>
       </TouchableOpacity>
 
+      {/* Save button */}
       <TouchableOpacity
         style={styles.saveBtn}
         onPress={handleSave}
         activeOpacity={0.8}
         accessibilityLabel="Save baby profile"
+        disabled={uploadingImage}
       >
-        <Text style={styles.saveBtnText}>Save</Text>
+        <Text style={styles.saveBtnText}>{uploadingImage ? 'Uploading...' : 'Save'}</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -361,13 +481,13 @@ export default function EditBabyScreen() {
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    backgroundColor: '#F9F9F7', // Warm White
-    paddingTop: 76,
+    backgroundColor: '#F9F9F7',
+    paddingTop: Platform.OS === 'ios' ? 76 : 56,
     paddingBottom: 100,
   },
   backButton: {
     position: 'absolute',
-    top: 60,
+    top: Platform.OS === 'ios' ? 60 : 40,
     left: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -376,48 +496,48 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 14,
-    color: '#3B322C', // Warm Taupe (darker)
+    color: '#3B322C',
     marginLeft: 4,
     fontWeight: '500',
   },
   header: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#3B322C', // Warm Taupe
+    color: '#3B322C',
     marginTop: 32,
     marginBottom: 16,
     textAlign: 'center',
   },
   label: {
     fontSize: 14,
-    color: '#867E76', // softer taupe shade
+    color: '#867E76',
     marginBottom: 4,
   },
   inputWithIcon: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#D4C5B3', // Warm Taupe
+    borderColor: '#D4C5B3',
     borderRadius: 12,
     padding: 10,
     marginBottom: 16,
-    backgroundColor: '#F5EDE1', // Beige Cream
-    justifyContent: 'space-between',
+    backgroundColor: '#F5EDE1',
+    justifyContent: 'flex-start',
   },
   inputText: {
     fontSize: 15,
-    color: '#3B322C', // Warm Taupe
+    color: '#3B322C',
   },
   genderInput: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#D4C5B3', // Warm Taupe
+    borderColor: '#D4C5B3',
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
     marginBottom: 16,
-    backgroundColor: '#F5EDE1', // Beige Cream
+    backgroundColor: '#F5EDE1',
   },
   genderSelected: {
     flexDirection: 'row',
@@ -425,13 +545,13 @@ const styles = StyleSheet.create({
   },
   genderText: {
     fontSize: 16,
-    color: '#3B322C', // Warm Taupe
+    color: '#3B322C',
   },
   genderDropdown: {
-    backgroundColor: '#F5EDE1', // Beige Cream
+    backgroundColor: '#F5EDE1',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#D4C5B3', // Warm Taupe
+    borderColor: '#D4C5B3',
     marginBottom: 16,
   },
   genderDropdownItem: {
@@ -440,16 +560,19 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#E8E8E8', // Light Dove Grey
+    borderBottomColor: '#E8E8E8',
   },
   genderDropdownText: {
     fontSize: 16,
-    color: '#3B322C', // Warm Taupe
+    color: '#3B322C',
+  },
+  genderDropdownItemSelected: {
+    backgroundColor: '#F5EDE1',
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#3B322C', // Warm Taupe
+    color: '#3B322C',
     marginVertical: 12,
   },
   growthEntriesContainer: {
@@ -460,7 +583,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     marginBottom: 12,
-    backgroundColor: '#E1D3C1', // Soft Sand
+    backgroundColor: '#E1D3C1',
     borderRadius: 10,
     padding: 8,
   },
@@ -469,71 +592,68 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#D4C5B3', // Warm Taupe
+    borderColor: '#D4C5B3',
     borderRadius: 12,
     padding: 10,
-    backgroundColor: '#F5EDE1', // Beige Cream
+    backgroundColor: '#F5EDE1',
   },
   dateButtonText: {
     fontSize: 13,
-    color: '#3B322C', // Warm Taupe
+    color: '#3B322C',
     marginLeft: 8,
   },
   growthInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#D4C5B3', // Warm Taupe
+    borderColor: '#D4C5B3',
     borderRadius: 12,
     padding: 10,
     fontSize: 13,
-    backgroundColor: '#F5EDE1', // Beige Cream
+    backgroundColor: '#F5EDE1',
   },
   modal: {
     justifyContent: 'flex-end',
     margin: 0,
   },
   modalContent: {
-    backgroundColor: '#E8E8E8', // Light Dove Grey
+    backgroundColor: '#E8E8E8',
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
     padding: 16,
   },
   modalButton: {
-    backgroundColor: '#D4C5B3', // Warm Taupe
+    backgroundColor: '#D4C5B3',
     borderRadius: 12,
     paddingVertical: 10,
     alignItems: 'center',
     marginTop: 12,
   },
   modalButtonText: {
-    color: '#3B322C', // Warm Taupe
+    color: '#3B322C',
     fontSize: 14,
     fontWeight: 'bold',
   },
   addBtn: {
     alignItems: 'center',
-    backgroundColor: '#E8E8E8', // Light Dove Grey
+    backgroundColor: '#E8E8E8',
     borderRadius: 12,
     paddingVertical: 10,
     marginBottom: 20,
   },
   addBtnText: {
     fontSize: 15,
-    color: '#3B322C', // Warm Taupe
+    color: '#3B322C',
     fontWeight: '600',
   },
   saveBtn: {
-    backgroundColor: '#D4C5B3', // Warm Taupe
+    backgroundColor: '#D4C5B3',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
   },
   saveBtnText: {
-    color: '#3B322C', // Warm Taupe
+    color: '#3B322C',
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  genderDropdownItemSelected: {
-    backgroundColor: '#F5EDE1', // Beige Cream for selected
   },
 });
