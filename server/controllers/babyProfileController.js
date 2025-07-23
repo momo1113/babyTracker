@@ -22,7 +22,8 @@ const calculateAge = (dobString) => {
   let ageParts = [];
 
   if (totalMonths > 0) ageParts.push(`${totalMonths} months`);
-  if (weeks > 0) ageParts.push(`${weeks} weeks`);
+  if (weeks === 1) ageParts.push(`${weeks} week`);
+  if (weeks > 1) ageParts.push(`${weeks} weeks`);
   if (totalMonths === 0 && days > 0) ageParts.push(`${days} days`);
 
   if (ageParts.length === 0) return '0 days';

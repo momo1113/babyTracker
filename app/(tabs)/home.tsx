@@ -85,25 +85,15 @@ export default function HomeScreen() {
       if (!response.ok) throw new Error(data.error || 'Failed to fetch profile');
 
       setProfileName(data.name);
-      const dob = dayjs(data.dob, 'MM/DD/YYYY');
+      const dob = dayjs(data.dob);
 
       if (!dob.isValid()) {
         console.error('Invalid DOB format:', data.dob);
         setProfileAge('Invalid DOB');
         return;
       }
-
-      const now = dayjs();
-
-      // Calculate months and weeks difference safely
-      let months = now.diff(dob, 'month');
-      let weeks = now.diff(dob.add(months, 'month'), 'week');
-
-      // Edge case: if today or dob in future (shouldn't be future, but just in case)
-      if (months < 0) months = 0;
-      if (weeks < 0) weeks = 0;
-
-      setProfileAge(`${months} ${months === 1 ? 'month' : 'months'}, ${weeks} ${weeks === 1 ? 'week' : 'weeks'}`);
+      
+      setProfileAge(data.age);
     } catch (err) {
       console.error('Failed to load baby profile:', err);
       setProfileName('N/A');
