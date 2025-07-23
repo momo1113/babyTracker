@@ -9,22 +9,15 @@ export default function GrowthChartScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Back Button */}
-      <TouchableOpacity
-        onPress={() => router.back()}
-        style={styles.backButton}
-        accessibilityLabel="Go back to previous screen"
-      >
-        <IconSymbol name="chevron.backward" size={22} color="#687076" />
+      <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <IconSymbol name="chevron.backward" size={22} color="#7A867B" />
         <Text style={styles.backText}>Back</Text>
       </TouchableOpacity>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Title */}
         <Text style={styles.title}>📈 Growth Chart Comparison</Text>
         <Text style={styles.subtitle}>Your Baby vs. WHO & CDC Standards</Text>
 
-        {/* Baby Summary */}
         <View style={styles.summaryBox}>
           <Text style={styles.summaryTitle}>🍼 Growth Summary</Text>
           <Text style={styles.summaryText}>- Age: 4 months, 5 days</Text>
@@ -34,7 +27,6 @@ export default function GrowthChartScreen() {
           <Text style={styles.summaryText}>- Weight Percentile (CDC): ~55%</Text>
         </View>
 
-        {/* WHO Chart */}
         <Text style={styles.chartLabel}>WHO Standard (Girls)</Text>
         <LineChart
           data={{
@@ -42,12 +34,12 @@ export default function GrowthChartScreen() {
             datasets: [
               {
                 data: [7.5, 11, 14.2],
-                color: () => '#8FB89C', // Baby
+                color: () => '#D4C5B3',
                 strokeWidth: 3,
               },
               {
                 data: [7.5, 10.5, 13, 15.2, 17],
-                color: () => '#C5D7BD', // WHO
+                color: () => '#E8E8E8',
                 strokeWidth: 1,
               },
             ],
@@ -57,10 +49,10 @@ export default function GrowthChartScreen() {
           height={260}
           yAxisSuffix="lbs"
           chartConfig={{
-            backgroundColor: '#E9F2EC',
-            backgroundGradientFrom: '#E9F2EC',
-            backgroundGradientTo: '#E9F2EC',
-            backgroundGradientFromOpacity: 0.2,
+            backgroundColor: '#E1D3C1',
+            backgroundGradientFrom: '#F5EDE1',
+            backgroundGradientTo: '#F5EDE1',
+            backgroundGradientFromOpacity: 0.3,
             backgroundGradientToOpacity: 0,
             decimalPlaces: 1,
             color: () => '#7A867B',
@@ -68,10 +60,10 @@ export default function GrowthChartScreen() {
             propsForDots: {
               r: '6',
               strokeWidth: '2',
-              stroke: '#2D3A2E',
+              stroke: '#D4C5B3',
             },
             propsForBackgroundLines: {
-              stroke: '#C5D7BD',
+              stroke: '#E8E8E8',
               strokeDasharray: '',
             },
             propsForLabels: {
@@ -81,10 +73,8 @@ export default function GrowthChartScreen() {
           }}
           bezier
           style={styles.chart}
-          accessibilityLabel="WHO Growth Chart comparing your baby's weight to WHO standards"
         />
 
-        {/* CDC Chart */}
         <Text style={styles.chartLabel}>CDC Standard (Girls)</Text>
         <LineChart
           data={{
@@ -92,12 +82,12 @@ export default function GrowthChartScreen() {
             datasets: [
               {
                 data: [7.5, 11, 14.2],
-                color: () => '#8FB89C', // Baby
+                color: () => '#D4C5B3',
                 strokeWidth: 3,
               },
               {
                 data: [7.5, 10.2, 12.5, 14.7, 16.5],
-                color: () => '#7A867B', // CDC
+                color: () => '#7A867B',
                 strokeWidth: 1,
               },
             ],
@@ -107,10 +97,10 @@ export default function GrowthChartScreen() {
           height={260}
           yAxisSuffix="lbs"
           chartConfig={{
-            backgroundColor: '#E9F2EC',
-            backgroundGradientFrom: '#E9F2EC',
-            backgroundGradientTo: '#E9F2EC',
-            backgroundGradientFromOpacity: 0.2,
+            backgroundColor: '#E1D3C1',
+            backgroundGradientFrom: '#F5EDE1',
+            backgroundGradientTo: '#F5EDE1',
+            backgroundGradientFromOpacity: 0.3,
             backgroundGradientToOpacity: 0,
             decimalPlaces: 1,
             color: () => '#7A867B',
@@ -118,10 +108,10 @@ export default function GrowthChartScreen() {
             propsForDots: {
               r: '6',
               strokeWidth: '2',
-              stroke: '#2D3A2E',
+              stroke: '#D4C5B3',
             },
             propsForBackgroundLines: {
-              stroke: '#C5D7BD',
+              stroke: '#E8E8E8',
               strokeDasharray: '',
             },
             propsForLabels: {
@@ -131,7 +121,6 @@ export default function GrowthChartScreen() {
           }}
           bezier
           style={styles.chart}
-          accessibilityLabel="CDC Growth Chart comparing your baby's weight to CDC standards"
         />
       </ScrollView>
     </View>
@@ -141,7 +130,7 @@ export default function GrowthChartScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F6F7F4',
+    backgroundColor: '#F9F9F7',
     paddingTop: 76,
     paddingHorizontal: 16,
   },
@@ -158,7 +147,7 @@ const styles = StyleSheet.create({
   },
   backText: {
     fontSize: 15,
-    color: '#2D3A2E',
+    color: '#7A867B',
     marginLeft: 6,
   },
   title: {
@@ -175,7 +164,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   summaryBox: {
-    backgroundColor: '#E9F2EC',
+    backgroundColor: '#F5EDE1',
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
@@ -202,6 +191,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginBottom: 24,
     padding: 8,
+    backgroundColor: '#F5EDE1',
     shadowColor: '#000',
     shadowOpacity: 0.04,
     shadowRadius: 2,
