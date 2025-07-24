@@ -177,5 +177,38 @@ const getAllGrowthEntries = async (req, res) => {
   }
 };
 
-module.exports = { saveBabyProfile, getBabyProfile, getAllGrowthEntries };
+
+const deleteGrowthEntry =  async (req, res) => {
+  try {
+    const userId = req.user.uid; // Assuming you have middleware to set req.user
+    const { dates } = req.body;
+
+    if (!Array.isArray(dates) || dates.length === 0) {
+      return res.status(400).json({ error: 'Dates array is required' });
+    }
+
+    const docRef = admin.firestore().collection('babyProfiles').doc(userId);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
+      return res.status(404).json({ error: 'Baby profile not found' });
+    }
+
+    const data = doc.data();
+    let growthData = Array.isArray(data.growthData) ? data.growthData : [];
+
+    // Filter out the growth entries with the specified dates
+    growthData = growthData.filter(entry => !dates.includes(entry.date));
+
+    // Update Firestore with new growthData array
+    await docRef.update({ growthData });
+
+    res.json({ message: 'Growth entries deleted successfully', growthData });
+  } catch (error) {
+    console.error('Error deleting growth entries:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+module.exports = { saveBabyProfile, getBabyProfile, deleteGrowthEntry, getAllGrowthEntries };
 

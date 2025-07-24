@@ -82,6 +82,39 @@ export default function EditBabyScreen() {
     fetchBabyProfile();
   }, []);
 
+  const deleteGrowthEntries = async (datesToDelete) => {
+  const auth = getAuth();
+  const user = auth.currentUser;
+  if (!user) {
+    Alert.alert('Authentication Error', 'Please log in first.');
+    router.push('/auth/login');
+    return;
+  }
+
+  try {
+    const token = await user.getIdToken();
+    const response = await fetch('http://192.168.1.9:3000/baby-profile', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ dates: datesToDelete }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to delete growth entries.');
+    }
+
+    const data = await response.json();
+    setGrowthData(data.growthData); // update growthData in state
+    Alert.alert('Success', 'Growth entries deleted.');
+  } catch (error) {
+    Alert.alert('Error', error.message || 'Something went wrong.');
+  }
+};
+
   // Open DOB calendar modal
   const openDobCalendar = () => {
     setTempDate(dob);
@@ -458,6 +491,15 @@ export default function EditBabyScreen() {
               }}
               accessibilityLabel={`Growth entry ${index + 1} height`}
             />
+
+             <TouchableOpacity
+                onPress={() => {
+                  deleteGrowthEntries([growthData[index].date]);
+                }}
+                accessibilityLabel={`Delete growth entry ${index + 1}`}
+              >
+                <IconSymbol name="trash" size={20} color="#D44C4C" />
+              </TouchableOpacity>
           </View>
         ))}
       </ScrollView>
