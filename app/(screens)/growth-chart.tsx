@@ -4,7 +4,6 @@ import { LineChart } from 'react-native-chart-kit';
 import { useRouter } from 'expo-router';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { getAuth } from 'firebase/auth';
-import dayjs from 'dayjs';
 
 export default function GrowthChartScreen() {
   const router = useRouter();
@@ -35,18 +34,11 @@ export default function GrowthChartScreen() {
     fetchProfile();
   }, []);
 
-  const getAgeLabel = (dob, date) => {
-    const birthDate = dayjs(dob);
-    const entryDate = dayjs(date);
-    const months = entryDate.diff(birthDate, 'month');
-    return `${months}m`;
+  // Helper: format dates like "Jul 24"
+  const formatDateLabel = (dateStr) => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   };
-
-  const getChartLabels = () =>
-    profile?.growthData?.sort((a, b) => new Date(a.date) - new Date(b.date)).map(entry => getAgeLabel(profile.dob, entry.date)) || [];
-
-  const getWeightData = () =>
-    profile?.growthData?.sort((a, b) => new Date(a.date) - new Date(b.date)).map(entry => entry.weight).filter(Boolean) || [];
 
   return (
     <View style={styles.container}>
@@ -57,7 +49,7 @@ export default function GrowthChartScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>📈 Growth Chart Comparison</Text>
-        <Text style={styles.subtitle}>Your Baby vs. WHO & CDC Standards</Text>
+        <Text style={styles.subtitle}>Your Baby vs. WHO Standards</Text>
 
         {profile && (
           <View style={styles.summaryBox}>
@@ -86,105 +78,105 @@ export default function GrowthChartScreen() {
           </View>
         )}
 
-        <Text style={styles.chartLabel}>WHO Standard ({profile?.gender === 'male' ? 'Boys' : 'Girls'})</Text>
-        <LineChart
-          data={{
-            labels: getChartLabels(),
-            datasets: [
-              {
-                data: getWeightData(),
-                color: () => '#D4C5B3',
-                strokeWidth: 3,
-              },
-              {
-                data: profile?.gender === 'male'
-                  ? [7.5, 11.5, 14.8, 17.5, 19.2]
-                  : [7.3, 11.0, 13.4, 15.4, 17.2],
-                color: () => '#E8E8E8',
-                strokeWidth: 1,
-              },
-            ],
-            legend: ['Your Baby', 'WHO Standard'],
-          }}
-          width={Dimensions.get('window').width - 32}
-          height={260}
-          yAxisSuffix="lbs"
-          chartConfig={{
-            backgroundColor: '#E1D3C1',
-            backgroundGradientFrom: '#F5EDE1',
-            backgroundGradientTo: '#F5EDE1',
-            backgroundGradientFromOpacity: 0.3,
-            backgroundGradientToOpacity: 0,
-            decimalPlaces: 1,
-            color: () => '#7A867B',
-            labelColor: () => '#7A867B',
-            propsForDots: {
-              r: '6',
-              strokeWidth: '2',
-              stroke: '#D4C5B3',
-            },
-            propsForBackgroundLines: {
-              stroke: '#E8E8E8',
-              strokeDasharray: '',
-            },
-            propsForLabels: {
-              fontSize: 12,
-              fontWeight: '500',
-            },
-          }}
-          bezier
-          style={styles.chart}
-        />
-
-        <Text style={styles.chartLabel}>CDC Standard ({profile?.gender === 'male' ? 'Boys' : 'Girls'})</Text>
-        <LineChart
-          data={{
-            labels: getChartLabels(),
-            datasets: [
-              {
-                data: getWeightData(),
-                color: () => '#D4C5B3',
-                strokeWidth: 3,
-              },
-              {
-                data: profile?.gender === 'male'
-                  ? [7.5, 11.2, 13.5, 15.5, 17.1]
-                  : [7.5, 11.0, 13.2, 15.0, 16.8],
+        {profile && profile.growthData && profile.growthData.length > 0 && (
+          <>
+            {/* Weight Chart */}
+            <Text style={styles.chartLabel}>Weight Chart (lbs)</Text>
+            <LineChart
+              data={{
+                labels: profile.growthData.map(entry => formatDateLabel(entry.date)),
+                datasets: [
+                  {
+                    data: profile.growthData.map(entry => Number(entry.weight) || 0),
+                    color: () => '#D4C5B3',
+                    strokeWidth: 3,
+                  },
+                  {
+                    // WHO weight standard example data
+                    data: [7.5, 10.5, 13, 15.2, 17],
+                    color: () => '#E8E8E8',
+                    strokeWidth: 1,
+                  },
+                ],
+                legend: ['Your Baby', 'WHO Standard'],
+              }}
+              width={Dimensions.get('window').width - 32}
+              height={260}
+              yAxisSuffix="lbs"
+              chartConfig={{
+                backgroundColor: '#E1D3C1',
+                backgroundGradientFrom: '#F5EDE1',
+                backgroundGradientTo: '#F5EDE1',
+                decimalPlaces: 1,
                 color: () => '#7A867B',
-                strokeWidth: 1,
-              },
-            ],
-            legend: ['Your Baby', 'CDC Standard'],
-          }}
-          width={Dimensions.get('window').width - 32}
-          height={260}
-          yAxisSuffix="lbs"
-          chartConfig={{
-            backgroundColor: '#E1D3C1',
-            backgroundGradientFrom: '#F5EDE1',
-            backgroundGradientTo: '#F5EDE1',
-            backgroundGradientFromOpacity: 0.3,
-            backgroundGradientToOpacity: 0,
-            decimalPlaces: 1,
-            color: () => '#7A867B',
-            labelColor: () => '#7A867B',
-            propsForDots: {
-              r: '6',
-              strokeWidth: '2',
-              stroke: '#D4C5B3',
-            },
-            propsForBackgroundLines: {
-              stroke: '#E8E8E8',
-              strokeDasharray: '',
-            },
-            propsForLabels: {
-              fontSize: 12,
-              fontWeight: '500',
-            },
-          }}
-          bezier
-          style={styles.chart}
-        />
+                labelColor: () => '#7A867B',
+                propsForDots: {
+                  r: '6',
+                  strokeWidth: '2',
+                  stroke: '#D4C5B3',
+                },
+                propsForBackgroundLines: {
+                  stroke: '#E8E8E8',
+                  strokeDasharray: '',
+                },
+                propsForLabels: {
+                  fontSize: 12,
+                  fontWeight: '500',
+                },
+              }}
+              bezier
+              style={styles.chart}
+            />
+
+            {/* Height Chart */}
+            <Text style={styles.chartLabel}>Height Chart (inches)</Text>
+            <LineChart
+              data={{
+                labels: profile.growthData.map(entry => formatDateLabel(entry.date)),
+                datasets: [
+                  {
+                    data: profile.growthData.map(entry => Number(entry.height) || 0),
+                    color: () => '#D4C5B3',
+                    strokeWidth: 3,
+                  },
+                  {
+                    // WHO height standard example data
+                    data: [19, 23, 26, 28, 30],
+                    color: () => '#E8E8E8',
+                    strokeWidth: 1,
+                  },
+                ],
+                legend: ['Your Baby', 'WHO Standard'],
+              }}
+              width={Dimensions.get('window').width - 32}
+              height={260}
+              yAxisSuffix="in"
+              chartConfig={{
+                backgroundColor: '#E1D3C1',
+                backgroundGradientFrom: '#F5EDE1',
+                backgroundGradientTo: '#F5EDE1',
+                decimalPlaces: 1,
+                color: () => '#7A867B',
+                labelColor: () => '#7A867B',
+                propsForDots: {
+                  r: '6',
+                  strokeWidth: '2',
+                  stroke: '#D4C5B3',
+                },
+                propsForBackgroundLines: {
+                  stroke: '#E8E8E8',
+                  strokeDasharray: '',
+                },
+                propsForLabels: {
+                  fontSize: 12,
+                  fontWeight: '500',
+                },
+              }}
+              bezier
+              style={styles.chart}
+            />
+          </>
+        )}
       </ScrollView>
     </View>
   );

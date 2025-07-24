@@ -532,7 +532,7 @@ export default function EditBabyScreen() {
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    backgroundColor: '#F9F9F7',
+    backgroundColor: '#F9F9F7', // Warm White
     paddingTop: Platform.OS === 'ios' ? 76 : 56,
     paddingBottom: 100,
   },
@@ -547,7 +547,7 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 14,
-    color: '#3B322C',
+    color: '#3B322C', // Dark warm taupe-ish color for text
     marginLeft: 4,
     fontWeight: '500',
   },
@@ -561,7 +561,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    color: '#867E76',
+    color: '#867E76', // Warm Taupe (darker)
     fontWeight: '600',
     marginBottom: 8,
   },
@@ -571,10 +571,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: '#C8C4BC',
+    borderColor: '#E8E8E8', // Light Dove Grey border
     borderRadius: 6,
     marginBottom: 16,
-    backgroundColor: '#fff',
+    backgroundColor: '#F5EDE1', // Beige Cream background
   },
   inputText: {
     flex: 1,
@@ -587,10 +587,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: '#C8C4BC',
+    borderColor: '#E8E8E8', // Light Dove Grey border
     borderRadius: 6,
     marginBottom: 16,
-    backgroundColor: '#fff',
+    backgroundColor: '#F5EDE1', // Beige Cream background
   },
   genderSelected: {
     flexDirection: 'row',
@@ -601,9 +601,9 @@ const styles = StyleSheet.create({
     color: '#3B322C',
   },
   genderDropdown: {
-    backgroundColor: '#fff',
+    backgroundColor: '#F5EDE1', // Beige Cream
     borderWidth: 1,
-    borderColor: '#C8C4BC',
+    borderColor: '#E8E8E8', // Light Dove Grey
     borderRadius: 6,
     marginBottom: 16,
   },
@@ -614,7 +614,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   genderDropdownItemSelected: {
-    backgroundColor: '#E0E5DB',
+    backgroundColor: '#D4C5B3', // Warm Taupe
   },
   genderDropdownText: {
     fontSize: 16,
@@ -638,12 +638,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#C8C4BC',
+    borderColor: '#E8E8E8', // Light Dove Grey border
     borderRadius: 6,
     paddingHorizontal: 10,
     paddingVertical: 8,
     marginRight: 8,
-    backgroundColor: '#fff',
+    backgroundColor: '#F5EDE1', // Beige Cream background
   },
   dateButtonText: {
     marginLeft: 6,
@@ -652,34 +652,34 @@ const styles = StyleSheet.create({
   growthInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#C8C4BC',
+    borderColor: '#E8E8E8', // Light Dove Grey border
     borderRadius: 6,
     paddingHorizontal: 10,
     paddingVertical: 8,
     marginRight: 8,
-    backgroundColor: '#fff',
+    backgroundColor: '#F5EDE1', // Beige Cream background
   },
   addBtn: {
     alignSelf: 'center',
-    backgroundColor: '#8FB89C',
+    backgroundColor: '#D4C5B3', // Warm Taupe button
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 25,
     marginBottom: 24,
   },
   addBtnText: {
-    color: '#fff',
+    color: '#3B322C', // Dark text on button
     fontSize: 16,
     fontWeight: '600',
   },
   saveBtn: {
-    backgroundColor: '#3B322C',
+    backgroundColor: '#3B322C', // Dark warm taupe
     paddingVertical: 14,
     borderRadius: 25,
     marginBottom: 40,
   },
   saveBtnText: {
-    color: '#fff',
+    color: '#F9F9F7', // Warm White text on dark button
     fontSize: 18,
     fontWeight: '700',
     textAlign: 'center',
@@ -689,20 +689,20 @@ const styles = StyleSheet.create({
     margin: 0,
   },
   modalContent: {
-    backgroundColor: '#E9F2EC',
+    backgroundColor: '#E1D3C1', // Soft Sand background for modal
     padding: 16,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     height: 360,
   },
   modalButton: {
-    backgroundColor: '#8FB89C',
+    backgroundColor: '#D4C5B3', // Warm Taupe
     borderRadius: 12,
     paddingVertical: 10,
     marginTop: 10,
   },
   modalButtonText: {
-    color: '#fff',
+    color: '#3B322C', // Dark text
     textAlign: 'center',
     fontWeight: '600',
     fontSize: 16,

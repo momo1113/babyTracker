@@ -17,6 +17,12 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useRouter } from 'expo-router';
 import { getAuth } from 'firebase/auth';
 
+// Helper function to parse date string as local date (no timezone shift)
+function parseDateAsLocal(dateStr) {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day); // month is 0-indexed
+}
+
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -88,12 +94,6 @@ const fetchBabyProfile = async () => {
     setRateModalVisible(false);
     setRating(0);
   };
-
-  // Get latest growth data (last item in growthData array)
-  const latestGrowth =
-    babyProfile?.growthData && babyProfile.growthData.length > 0
-      ? babyProfile.growthData[babyProfile.growthData.length - 1]
-      : null;
 
   return (
     <>
@@ -175,7 +175,7 @@ const fetchBabyProfile = async () => {
             <View style={styles.growthRow}>
               <Text style={styles.growthLabel}>Date:</Text>
               <Text style={styles.growthValue}>
-                {new Date(latestGrowth.date).toLocaleDateString(undefined, {
+                {parseDateAsLocal(latestGrowth.date).toLocaleDateString(undefined, {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',
