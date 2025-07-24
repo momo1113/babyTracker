@@ -1,11 +1,52 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, ScrollView } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { useRouter } from 'expo-router';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { getAuth } from 'firebase/auth';
+import dayjs from 'dayjs';
 
 export default function GrowthChartScreen() {
   const router = useRouter();
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const user = getAuth().currentUser;
+        if (!user) return;
+
+        const token = await user.getIdToken();
+        const response = await fetch('http://192.168.1.9:3000/baby-profile', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to fetch');
+
+        setProfile(data);
+      } catch (err) {
+        console.error('Error fetching baby profile:', err);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  const getAgeLabel = (dob, date) => {
+    const birthDate = dayjs(dob);
+    const entryDate = dayjs(date);
+    const months = entryDate.diff(birthDate, 'month');
+    return `${months}m`;
+  };
+
+  const getChartLabels = () =>
+    profile?.growthData?.sort((a, b) => new Date(a.date) - new Date(b.date)).map(entry => getAgeLabel(profile.dob, entry.date)) || [];
+
+  const getWeightData = () =>
+    profile?.growthData?.sort((a, b) => new Date(a.date) - new Date(b.date)).map(entry => entry.weight).filter(Boolean) || [];
 
   return (
     <View style={styles.container}>
@@ -18,27 +59,47 @@ export default function GrowthChartScreen() {
         <Text style={styles.title}>📈 Growth Chart Comparison</Text>
         <Text style={styles.subtitle}>Your Baby vs. WHO & CDC Standards</Text>
 
-        <View style={styles.summaryBox}>
-          <Text style={styles.summaryTitle}>🍼 Growth Summary</Text>
-          <Text style={styles.summaryText}>- Age: 4 months, 5 days</Text>
-          <Text style={styles.summaryText}>- Weight: 14.2 lbs</Text>
-          <Text style={styles.summaryText}>- Height: 24.5 in</Text>
-          <Text style={styles.summaryText}>- Weight Percentile (WHO): ~60%</Text>
-          <Text style={styles.summaryText}>- Weight Percentile (CDC): ~55%</Text>
-        </View>
+        {profile && (
+          <View style={styles.summaryBox}>
+            <Text style={styles.summaryTitle}>🍼 Growth Summary</Text>
+            <Text style={styles.summaryText}>- Age: {profile?.age || 'N/A'}</Text>
 
-        <Text style={styles.chartLabel}>WHO Standard (Girls)</Text>
+            {profile?.growthData?.length > 0 ? (
+              <>
+                <Text style={styles.summaryText}>
+                  - Weight: {profile.growthData.at(-1)?.weight || 'N/A'} lbs
+                </Text>
+                <Text style={styles.summaryText}>
+                  - Height: {profile.growthData.at(-1)?.height || 'N/A'} in
+                </Text>
+              </>
+            ) : (
+              <Text style={styles.summaryText}>No growth data available</Text>
+            )}
+
+            <Text style={styles.summaryText}>
+              - Weight Percentile (WHO): {profile?.weightPercentile ? `${profile.weightPercentile}%` : 'N/A'}
+            </Text>
+            <Text style={styles.summaryText}>
+              - Height Percentile (WHO): {profile?.heightPercentile ? `${profile.heightPercentile}%` : 'N/A'}
+            </Text>
+          </View>
+        )}
+
+        <Text style={styles.chartLabel}>WHO Standard ({profile?.gender === 'male' ? 'Boys' : 'Girls'})</Text>
         <LineChart
           data={{
-            labels: ['0m', '2m', '4m', '6m', '8m'],
+            labels: getChartLabels(),
             datasets: [
               {
-                data: [7.5, 11, 14.2],
+                data: getWeightData(),
                 color: () => '#D4C5B3',
                 strokeWidth: 3,
               },
               {
-                data: [7.5, 10.5, 13, 15.2, 17],
+                data: profile?.gender === 'male'
+                  ? [7.5, 11.5, 14.8, 17.5, 19.2]
+                  : [7.3, 11.0, 13.4, 15.4, 17.2],
                 color: () => '#E8E8E8',
                 strokeWidth: 1,
               },
@@ -75,18 +136,20 @@ export default function GrowthChartScreen() {
           style={styles.chart}
         />
 
-        <Text style={styles.chartLabel}>CDC Standard (Girls)</Text>
+        <Text style={styles.chartLabel}>CDC Standard ({profile?.gender === 'male' ? 'Boys' : 'Girls'})</Text>
         <LineChart
           data={{
-            labels: ['0m', '2m', '4m', '6m', '8m'],
+            labels: getChartLabels(),
             datasets: [
               {
-                data: [7.5, 11, 14.2],
+                data: getWeightData(),
                 color: () => '#D4C5B3',
                 strokeWidth: 3,
               },
               {
-                data: [7.5, 10.2, 12.5, 14.7, 16.5],
+                data: profile?.gender === 'male'
+                  ? [7.5, 11.2, 13.5, 15.5, 17.1]
+                  : [7.5, 11.0, 13.2, 15.0, 16.8],
                 color: () => '#7A867B',
                 strokeWidth: 1,
               },

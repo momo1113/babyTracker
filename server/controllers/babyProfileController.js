@@ -151,11 +151,16 @@ const getBabyProfile = async (req, res) => {
   }
 };
 
-
-
 const getAllGrowthEntries = async (req, res) => {
   try {
-    const doc = await db.collection('babyProfiles').doc('main').get();
+    const userId = req.user.uid; // requires verifyFirebaseToken middleware
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized: Missing user ID' });
+    }
+
+    const docRef = db.collection('babyProfiles').doc(userId);
+    const doc = await docRef.get();
 
     if (!doc.exists) {
       return res.status(404).json({ error: 'Baby profile not found' });
@@ -163,8 +168,9 @@ const getAllGrowthEntries = async (req, res) => {
 
     const data = doc.data();
     const growthData = Array.isArray(data.growthData) ? data.growthData : [];
+    const gender = data.gender;
 
-    return res.status(200).json({ growthData });
+    return res.status(200).json({ growthData, gender });
   } catch (error) {
     console.error('Error fetching growth entries:', error);
     return res.status(500).json({ error: 'Internal server error' });
