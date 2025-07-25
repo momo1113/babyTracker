@@ -31,20 +31,25 @@ const calculateAge = (dobString) => {
   return ageParts.join(', ');
 };
 
-
 const saveBabyProfile = async (req, res) => {
   try {
-    const { userId, name, dob, gender, growthData = [] } = req.body;
+    const { userId, name, dob, gender } = req.body;
+
+    // growthData might be a JSON string when sent via multipart/form-data
+    let growthData = req.body.growthData || '[]';
+
+    try {
+      growthData = JSON.parse(growthData);
+    } catch (err) {
+      return res.status(400).json({ error: 'growthData must be a valid JSON array.' });
+    }
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized: Missing userId' });
     }
-
-    // Basic validation
     if (!name || !dob || !gender) {
       return res.status(400).json({ error: 'Missing required fields: name, dob, or gender.' });
     }
-
     if (!Array.isArray(growthData)) {
       return res.status(400).json({ error: 'growthData must be an array.' });
     }
@@ -55,12 +60,16 @@ const saveBabyProfile = async (req, res) => {
       name,
       dob,
       gender,
-      age, // Save the calculated age here
+      age,
       growthData,
       updatedAt: new Date().toISOString(),
     };
 
-    // Save under userId document for multi-user support
+    if (req.file) {
+      // handle photo upload and get photoUrl here, see previous examples
+      // e.g. entry.photoUrl = ...
+    }
+
     const docRef = db.collection('babyProfiles').doc(userId);
     await docRef.set(entry);
 

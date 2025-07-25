@@ -8,11 +8,13 @@ import {
   ScrollView,
   Alert,
   Platform,
+  Image
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { getAuth } from 'firebase/auth';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function BabyProfileScreen() {
   const router = useRouter();
@@ -23,6 +25,7 @@ export default function BabyProfileScreen() {
   const [gender, setGender] = useState('');
   const [showPicker, setShowPicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [photoUri, setPhotoUri] = useState(null);
 
   const isValid = name.trim() && dob.trim() && gender.trim();
 
@@ -37,65 +40,105 @@ export default function BabyProfileScreen() {
     }
   };
 
-  const saveBabyProfile = async () => {
-    if (!isValid) {
-      Alert.alert('Validation', 'Please fill in all required fields.');
-      return;
-    }
+const handleImageUpload = async () => {
+  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (status !== 'granted') {
+    Alert.alert('Permission required', 'Please allow photo access.');
+    return;
+  }
 
-    const user = auth.currentUser;
-    if (!user) {
-      Alert.alert('Authentication', 'Please login first.');
-      router.push('/auth/login');
-      return;
-    }
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    allowsEditing: true,
+    quality: 0.7,
+  });
 
-    try {
-      const payload = {
-        userId: user.uid,
-        name,
-        dob,
-        gender,
-        growthData: [],
-      };
+  if (!result.canceled) {
+    const uri = result.assets[0].uri;
+    setPhotoUri(uri);
+  }
+};
 
-      const response = await fetch('http://192.168.1.9:3000/baby-profile', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${await user.getIdToken()}`,
-        },
-        body: JSON.stringify(payload),
+const saveBabyProfile = async () => {
+  if (!isValid) {
+    Alert.alert('Validation', 'Please fill in all required fields.');
+    return;
+  }
+
+  const user = auth.currentUser;
+  if (!user) {
+    Alert.alert('Authentication', 'Please login first.');
+    router.push('/auth/login');
+    return;
+  }
+
+  try {
+    const token = await user.getIdToken();
+
+    const formData = new FormData();
+
+    formData.append('name', name);
+    formData.append('dob', dob);
+    formData.append('gender', gender);
+    formData.append('growthData', JSON.stringify([])); // as string
+    formData.append('userId', user.uid); // optional if backend uses token UID
+
+    // Attach photo if selected
+    if (photoUri) {
+        const fileName = photoUri.split('/').pop();
+        const fileType = 'image/jpeg'; // or infer from extension
+
+      formData.append('photo', {
+        uri: photoUri,
+        name: fileName,
+        type: fileType,
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        Alert.alert('Error', data.error || 'Failed to save baby profile');
-        return;
-      }
-
-      Alert.alert('Success', 'Baby profile saved successfully!', [
-        {
-          text: 'OK',
-          onPress: () => router.replace('/(tabs)/home'),
-        },
-      ]);
-    } catch (error) {
-      console.error('Save baby profile error', error);
-      Alert.alert('Error', 'Network error, please try again.');
     }
-  };
+
+    const response = await fetch('http://192.168.1.9:3000/baby-profile', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        // Don't set 'Content-Type' here — let fetch handle it for FormData
+      },
+      body: formData,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      Alert.alert('Error', data.error || 'Failed to save baby profile');
+      return;
+    }
+
+    Alert.alert('Success', 'Baby profile saved successfully!', [
+      {
+        text: 'OK',
+        onPress: () => router.replace('/(tabs)/home'),
+      },
+    ]);
+  } catch (error) {
+    console.error('Save baby profile error', error);
+    Alert.alert('Error', 'Network error, please try again.');
+  }
+};
+
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-        <IconSymbol name="chevron-left" size={20} color="#7A867B" />
+      <TouchableOpacity onPress={() => router.push('/auth/login')} style={styles.backButton}>
+        <IconSymbol name="chevron.backward" size={20} color="#7A867B" />
         <Text style={styles.backText}>Back</Text>
       </TouchableOpacity>
 
       <View style={styles.iconCircle}>
-        <Text style={styles.icon}>👶</Text>
+        <TouchableOpacity onPress={handleImageUpload} style={styles.iconCircle}>
+            {photoUri ? (
+              <Image source={{ uri: photoUri }} style={styles.profileImage} />
+              ) : (
+                <IconSymbol name="camera" size={28} color="#7A867B" />
+              )}
+            </TouchableOpacity>
       </View>
 
       <Text style={styles.title}>Create Baby Profile</Text>
@@ -205,14 +248,20 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#E1D3C1',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+      backgroundColor: '#E1D3C1',
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden', // ensures image is clipped into the circle
   },
+  profileImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+
   icon: {
     fontSize: 36,
   },
