@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, {useState } from 'react';
 import {
   View,
   Text,
@@ -19,23 +19,60 @@ export default function AuthScreen() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-const handlePress = async () => {
-  if (!email || !password) return alert('Please enter email and password');
+  const handlePress = async () => {
+
+  if (!email || !password) {
+    alert('Please enter email and password');
+    return;
+  }
+
+    setLoading(true);
 
   try {
     if (isLogin) {
       // Login
       await signInWithEmailAndPassword(auth, email, password);
-      router.replace('/(tabs)/home'); // go to home page
+
+      // After login, check if baby profile exists
+      const user = auth.currentUser;
+      if (!user) throw new Error('User not authenticated');
+
+      const token = await user.getIdToken();
+      const response = await fetch('http://192.168.1.9:3000/baby-profile', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        // Profile not found or error
+        router.replace('/auth/signup');
+        return;
+      }
+
+      const data = await response.json();
+
+      if (!data || !data.name || !data.dob) {
+        // Profile incomplete
+        router.replace('/auth/signup');
+        return;
+      }
+
+      // Profile complete, go to home page
+      router.replace('/(tabs)/home');
     } else {
       // Sign up
       await createUserWithEmailAndPassword(auth, email, password);
-      router.replace('/auth/signup'); // 👈 redirect to baby info form
+      router.replace('/auth/signup'); // redirect to baby info form
     }
   } catch (error: any) {
     alert(error.message);
   }
+   finally {
+    setLoading(false);
+  }
 };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.logoCircle}>
