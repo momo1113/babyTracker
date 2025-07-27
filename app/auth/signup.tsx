@@ -15,10 +15,12 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { getAuth } from 'firebase/auth';
 import * as ImagePicker from 'expo-image-picker';
+import { useBanner } from '../../context/BannerContext';
 
 export default function BabyProfileScreen() {
   const router = useRouter();
   const auth = getAuth();
+    const { message, clearMessage } = useBanner(); // 👈 Add this
 
   const [name, setName] = useState('');
   const [dob, setDob] = useState('');
@@ -130,6 +132,15 @@ const saveBabyProfile = async () => {
         <IconSymbol name="chevron.backward" size={20} color="#7A867B" />
         <Text style={styles.backText}>Back</Text>
       </TouchableOpacity>
+
+      {message ? (
+        <View style={styles.banner}>
+          <Text style={styles.bannerText}>{message}</Text>
+          <TouchableOpacity onPress={clearMessage}>
+            <Text style={styles.bannerClose}>✕</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
 
       <View style={styles.iconCircle}>
         <TouchableOpacity onPress={handleImageUpload} style={styles.iconCircle}>
@@ -401,4 +412,26 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 12,
   },
+  banner: {
+  backgroundColor: '#FFE5D2',
+  borderRadius: 10,
+  padding: 12,
+  marginBottom: 16,
+  width: '100%',
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+},
+bannerText: {
+  color: '#8B3A0D',
+  fontSize: 14,
+  flex: 1,
+},
+bannerClose: {
+  fontSize: 18,
+  color: '#8B3A0D',
+  marginLeft: 12,
+  fontWeight: 'bold',
+},
+
 });

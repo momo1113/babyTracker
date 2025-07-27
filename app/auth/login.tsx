@@ -11,12 +11,14 @@ import {
 } from 'react-native';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../firebaseConfig'; // adjust path if different
+import { useBanner } from '@/context/BannerContext';
 
 export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const {setMessage: setBannerMessage } = useBanner();
   const router = useRouter();
 
   const handlePress = async () => {
@@ -46,6 +48,8 @@ export default function AuthScreen() {
 
       if (!response.ok) {
         // Profile not found or error
+        // Show banner and redirect to signup page
+        setBannerMessage("You haven't completed signup yet. Please finish your profile.");
         router.replace('/auth/signup');
         return;
       }
@@ -54,6 +58,7 @@ export default function AuthScreen() {
 
       if (!data || !data.name || !data.dob) {
         // Profile incomplete
+        setBannerMessage("You haven't completed signup yet. Please finish your profile.");
         router.replace('/auth/signup');
         return;
       }
