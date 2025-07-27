@@ -5,6 +5,7 @@ const dayjs = require('dayjs');
 
 
 const calculateAge = (dobString) => {
+  console.log('Calculating age for:', dobString);
   const birthDate = dayjs(dobString);
   const now = dayjs();
 

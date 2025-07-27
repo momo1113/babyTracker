@@ -94,6 +94,7 @@ export default function HomeScreen() {
       }
       
       setProfileAge(data.age);
+      console.log('Profile fetched:', data.name, data.age);
     } catch (err) {
       console.error('Failed to load baby profile:', err);
       setProfileName('N/A');

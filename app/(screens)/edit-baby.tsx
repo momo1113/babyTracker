@@ -46,7 +46,8 @@ export default function EditBabyScreen() {
   const [growthData, setGrowthData] = useState([{ date: today, weight: '', height: '' }]);
   const [isCalendarVisible, setIsCalendarVisible] = useState(false);
   const [selectedEntryIndex, setSelectedEntryIndex] = useState(null);
-  const [tempDate, setTempDate] = useState('');
+  const today = new Date().toISOString().split('T')[0];
+  const [tempDate, setTempDate] = useState(today);
 
   const [loadingProfile, setLoadingProfile] = useState(true);
 
@@ -117,9 +118,9 @@ export default function EditBabyScreen() {
 
   // Open DOB calendar modal
   const openDobCalendar = () => {
-    setTempDate(dob);
-    setIsDobModalVisible(true);
-  };
+  setTempDate(dob || today);
+  setIsDobModalVisible(true);
+};
 
   // DOB selected from calendar
   const handleDobSelect = (day) => {
@@ -129,10 +130,10 @@ export default function EditBabyScreen() {
 
   // Open calendar for growth entry date selection
   const openCalendar = (index) => {
-    setSelectedEntryIndex(index);
-    setTempDate(growthData[index].date || today);
-    setIsCalendarVisible(true);
-  };
+  setSelectedEntryIndex(index);
+  setTempDate(growthData[index]?.date || today);
+  setIsCalendarVisible(true);
+};
 
   // Growth entry date selected
   const handleDateSelect = (day) => {
@@ -358,7 +359,7 @@ export default function EditBabyScreen() {
       >
         <View style={styles.modalContent}>
           <Calendar
-            current={tempDate || today} // ✅ default to today
+            current={tempDate} // ✅ default to today
             onDayPress={handleDobSelect}
             markedDates={{
               [tempDate]: { selected: true, selectedColor: '#8FB89C' },
