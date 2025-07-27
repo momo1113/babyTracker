@@ -5,27 +5,21 @@ const dayjs = require('dayjs');
 
 
 const calculateAge = (dobString) => {
-  console.log('Calculating age for:', dobString);
-  const birthDate = dayjs(dobString);
+    const birthDate = dayjs(dobString);
   const now = dayjs();
 
   if (!birthDate.isValid()) return 'Invalid date';
-
   if (birthDate.isAfter(now)) return 'Future date';
 
   const totalMonths = now.diff(birthDate, 'month');
-  // Days after subtracting full months:
-  const daysAfterMonths = now.subtract(totalMonths, 'month').diff(birthDate, 'day');
+  const remainder = birthDate.add(totalMonths, 'month'); // ✅ Fix here
 
-  const weeks = Math.floor(daysAfterMonths / 7);
-  const days = daysAfterMonths % 7;
+  const remainingDays = now.diff(remainder, 'day');
 
   let ageParts = [];
 
-  if (totalMonths > 0) ageParts.push(`${totalMonths} months`);
-  if (weeks === 1) ageParts.push(`${weeks} week`);
-  if (weeks > 1) ageParts.push(`${weeks} weeks`);
-  if (totalMonths === 0 && days > 0) ageParts.push(`${days} days`);
+  if (totalMonths > 0) ageParts.push(`${totalMonths} month${totalMonths > 1 ? 's' : ''}`);
+  if (remainingDays > 0) ageParts.push(`${remainingDays} day${remainingDays > 1 ? 's' : ''}`);
 
   if (ageParts.length === 0) return '0 days';
 
