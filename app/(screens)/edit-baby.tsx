@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -19,15 +19,11 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 
 import { getAuth } from 'firebase/auth';
 import { storage, ref, uploadBytes, getDownloadURL } from '../../firebaseConfig'; // Adjust path to your firebase config
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../../firebaseConfig'; // Your Firestore db instance
 
 const GENDERS = [
   { label: 'Female', icon: 'female' },
   { label: 'Male', icon: 'male' },
 ];
-
-const today = new Date().toISOString().split('T')[0]; // get today's date in 'YYYY-MM-DD' format
 
 export default function EditBabyScreen() {
   const router = useRouter();
@@ -37,90 +33,22 @@ export default function EditBabyScreen() {
   const [photoUrl, setPhotoUrl] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  const [dob, setDob] = useState(today);
+  const [dob, setDob] = useState('2025-03-12');
   const [isDobModalVisible, setIsDobModalVisible] = useState(false);
 
   const [gender, setGender] = useState('Female');
   const [isGenderDropdownOpen, setIsGenderDropdownOpen] = useState(false);
 
-  const [growthData, setGrowthData] = useState([{ date: today, weight: '', height: '' }]);
+  const [growthData, setGrowthData] = useState([{ date: '2025-07-01', weight: '14.2', height: '24.5' }]);
   const [isCalendarVisible, setIsCalendarVisible] = useState(false);
   const [selectedEntryIndex, setSelectedEntryIndex] = useState(null);
-  const today = new Date().toISOString().split('T')[0];
-  const [tempDate, setTempDate] = useState(today);
-
-  const [loadingProfile, setLoadingProfile] = useState(true);
-
-  // Load baby profile data by userId on mount
-  useEffect(() => {
-    const fetchBabyProfile = async () => {
-      const auth = getAuth();
-      const user = auth.currentUser;
-
-      if (!user) {
-        setLoadingProfile(false);
-        return;
-      }
-
-      try {
-        const docRef = doc(db, 'babyProfiles', user.uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          setName(data.name || '');
-          setPhotoUrl(data.photoUrl || '');
-          setDob(data.dob || today);
-          setGender(data.gender || 'Female');
-          setGrowthData(data.growthData && data.growthData.length > 0 ? data.growthData : [{ date: today, weight: '', height: '' }]);
-        }
-      } catch (err) {
-        console.error('Failed to load profile:', err);
-      } finally {
-        setLoadingProfile(false);
-      }
-    };
-
-    fetchBabyProfile();
-  }, []);
-
-  const deleteGrowthEntries = async (datesToDelete) => {
-  const auth = getAuth();
-  const user = auth.currentUser;
-  if (!user) {
-    Alert.alert('Authentication Error', 'Please log in first.');
-    router.push('/auth/login');
-    return;
-  }
-
-  try {
-    const token = await user.getIdToken();
-    const response = await fetch('http://192.168.1.9:3000/baby-profile', {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ dates: datesToDelete }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to delete growth entries.');
-    }
-
-    const data = await response.json();
-    setGrowthData(data.growthData); // update growthData in state
-    Alert.alert('Success', 'Growth entries deleted.');
-  } catch (error) {
-    Alert.alert('Error', error.message || 'Something went wrong.');
-  }
-};
+  const [tempDate, setTempDate] = useState('');
 
   // Open DOB calendar modal
   const openDobCalendar = () => {
-  setTempDate(dob || today);
-  setIsDobModalVisible(true);
-};
+    setTempDate(dob);
+    setIsDobModalVisible(true);
+  };
 
   // DOB selected from calendar
   const handleDobSelect = (day) => {
@@ -130,10 +58,10 @@ export default function EditBabyScreen() {
 
   // Open calendar for growth entry date selection
   const openCalendar = (index) => {
-  setSelectedEntryIndex(index);
-  setTempDate(growthData[index]?.date || today);
-  setIsCalendarVisible(true);
-};
+    setSelectedEntryIndex(index);
+    setTempDate(growthData[index].date || '');
+    setIsCalendarVisible(true);
+  };
 
   // Growth entry date selected
   const handleDateSelect = (day) => {
@@ -156,7 +84,7 @@ export default function EditBabyScreen() {
         return;
       }
     }
-    setGrowthData([...growthData, { date: today, weight: '', height: '' }]);
+    setGrowthData([...growthData, { date: '', weight: '', height: '' }]);
   };
 
   // Upload image to Firebase Storage
@@ -255,7 +183,7 @@ export default function EditBabyScreen() {
         gender,
         growthData,
       };
-      console.log('Saving baby profile:', payload);
+
       const BASE_URL = 'http://192.168.1.9:3000';
 
       const response = await fetch(`${BASE_URL}/baby-profile`, {
@@ -281,14 +209,6 @@ export default function EditBabyScreen() {
       Alert.alert('Error', error.message || 'Something went wrong');
     }
   };
-
-  if (loadingProfile) {
-    return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color="#3B322C" />
-      </View>
-    );
-  }
 
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
@@ -337,13 +257,8 @@ export default function EditBabyScreen() {
 
       {/* DOB Input */}
       <Text style={styles.label}>Date of Birth</Text>
-      <TouchableOpacity
-        onPress={openDobCalendar}
-        activeOpacity={0.7}
-        accessibilityLabel="Select date of birth"
-      >
-        <View style={[styles.inputWithIcon, { justifyContent: 'space-between' }]}>
-          {/* ✅ calendar icon aligned right */}
+      <TouchableOpacity onPress={openDobCalendar} activeOpacity={0.7} accessibilityLabel="Select date of birth">
+        <View style={styles.inputWithIcon}>
           <Text style={styles.inputText}>{dob}</Text>
           <IconSymbol name="calendar" size={20} color="#687076" />
         </View>
@@ -359,7 +274,7 @@ export default function EditBabyScreen() {
       >
         <View style={styles.modalContent}>
           <Calendar
-            current={tempDate} // ✅ default to today
+            current={tempDate || '2025-07-18'}
             onDayPress={handleDobSelect}
             markedDates={{
               [tempDate]: { selected: true, selectedColor: '#8FB89C' },
@@ -452,7 +367,7 @@ export default function EditBabyScreen() {
       <Text style={styles.sectionTitle}>📈 Growth Entries</Text>
 
       <ScrollView
-        style={[styles.growthEntriesContainer, { maxHeight: 400 }]} // ✅ increased max height for better scrolling
+        style={styles.growthEntriesContainer}
         nestedScrollEnabled={true}
         showsVerticalScrollIndicator={true}
       >
@@ -492,15 +407,6 @@ export default function EditBabyScreen() {
               }}
               accessibilityLabel={`Growth entry ${index + 1} height`}
             />
-
-             <TouchableOpacity
-                onPress={() => {
-                  deleteGrowthEntries([growthData[index].date]);
-                }}
-                accessibilityLabel={`Delete growth entry ${index + 1}`}
-              >
-                <IconSymbol name="trash" size={20} color="#D44C4C" />
-              </TouchableOpacity>
           </View>
         ))}
       </ScrollView>
@@ -515,7 +421,7 @@ export default function EditBabyScreen() {
       >
         <View style={styles.modalContent}>
           <Calendar
-            current={tempDate || today} // ✅ default to today
+            current={tempDate || '2025-07-18'}
             onDayPress={handleDateSelect}
             markedDates={{
               [tempDate]: { selected: true, selectedColor: '#8FB89C' },
@@ -575,7 +481,7 @@ export default function EditBabyScreen() {
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    backgroundColor: '#F9F9F7', // Warm White
+    backgroundColor: '#F9F9F7',
     paddingTop: Platform.OS === 'ios' ? 76 : 56,
     paddingBottom: 100,
   },
@@ -590,7 +496,7 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 14,
-    color: '#3B322C', // Dark warm taupe-ish color for text
+    color: '#3B322C',
     marginLeft: 4,
     fontWeight: '500',
   },
@@ -604,36 +510,34 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    color: '#867E76', // Warm Taupe (darker)
-    fontWeight: '600',
-    marginBottom: 8,
+    color: '#867E76',
+    marginBottom: 4,
   },
   inputWithIcon: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
     borderWidth: 1,
-    borderColor: '#E8E8E8', // Light Dove Grey border
-    borderRadius: 6,
+    borderColor: '#D4C5B3',
+    borderRadius: 12,
+    padding: 10,
     marginBottom: 16,
-    backgroundColor: '#F5EDE1', // Beige Cream background
+    backgroundColor: '#F5EDE1',
+    justifyContent: 'flex-start',
   },
   inputText: {
-    flex: 1,
-    fontSize: 16,
+    fontSize: 15,
     color: '#3B322C',
   },
   genderInput: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
     borderWidth: 1,
-    borderColor: '#E8E8E8', // Light Dove Grey border
-    borderRadius: 6,
+    borderColor: '#D4C5B3',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     marginBottom: 16,
-    backgroundColor: '#F5EDE1', // Beige Cream background
+    backgroundColor: '#F5EDE1',
   },
   genderSelected: {
     flexDirection: 'row',
@@ -644,110 +548,112 @@ const styles = StyleSheet.create({
     color: '#3B322C',
   },
   genderDropdown: {
-    backgroundColor: '#F5EDE1', // Beige Cream
+    backgroundColor: '#F5EDE1',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E8E8E8', // Light Dove Grey
-    borderRadius: 6,
+    borderColor: '#D4C5B3',
     marginBottom: 16,
   },
   genderDropdownItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  genderDropdownItemSelected: {
-    backgroundColor: '#D4C5B3', // Warm Taupe
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8E8E8',
   },
   genderDropdownText: {
     fontSize: 16,
     color: '#3B322C',
   },
+  genderDropdownItemSelected: {
+    backgroundColor: '#F5EDE1',
+  },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    marginVertical: 8,
+    fontWeight: 'bold',
     color: '#3B322C',
+    marginVertical: 12,
   },
   growthEntriesContainer: {
+    maxHeight: 320,
     marginBottom: 20,
   },
   growthRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    gap: 8,
     marginBottom: 12,
+    backgroundColor: '#E1D3C1',
+    borderRadius: 10,
+    padding: 8,
   },
   dateButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E8E8E8', // Light Dove Grey border
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    marginRight: 8,
-    backgroundColor: '#F5EDE1', // Beige Cream background
+    borderColor: '#D4C5B3',
+    borderRadius: 12,
+    padding: 10,
+    backgroundColor: '#F5EDE1',
   },
   dateButtonText: {
-    marginLeft: 6,
+    fontSize: 13,
     color: '#3B322C',
+    marginLeft: 8,
   },
   growthInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#E8E8E8', // Light Dove Grey border
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    marginRight: 8,
-    backgroundColor: '#F5EDE1', // Beige Cream background
-  },
-  addBtn: {
-    alignSelf: 'center',
-    backgroundColor: '#D4C5B3', // Warm Taupe button
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 25,
-    marginBottom: 24,
-  },
-  addBtnText: {
-    color: '#3B322C', // Dark text on button
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  saveBtn: {
-    backgroundColor: '#3B322C', // Dark warm taupe
-    paddingVertical: 14,
-    borderRadius: 25,
-    marginBottom: 40,
-  },
-  saveBtnText: {
-    color: '#F9F9F7', // Warm White text on dark button
-    fontSize: 18,
-    fontWeight: '700',
-    textAlign: 'center',
+    borderColor: '#D4C5B3',
+    borderRadius: 12,
+    padding: 10,
+    fontSize: 13,
+    backgroundColor: '#F5EDE1',
   },
   modal: {
     justifyContent: 'flex-end',
     margin: 0,
   },
   modalContent: {
-    backgroundColor: '#E1D3C1', // Soft Sand background for modal
+    backgroundColor: '#E8E8E8',
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
     padding: 16,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    height: 360,
   },
   modalButton: {
-    backgroundColor: '#D4C5B3', // Warm Taupe
+    backgroundColor: '#D4C5B3',
     borderRadius: 12,
     paddingVertical: 10,
-    marginTop: 10,
+    alignItems: 'center',
+    marginTop: 12,
   },
   modalButtonText: {
-    color: '#3B322C', // Dark text
-    textAlign: 'center',
+    color: '#3B322C',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  addBtn: {
+    alignItems: 'center',
+    backgroundColor: '#E8E8E8',
+    borderRadius: 12,
+    paddingVertical: 10,
+    marginBottom: 20,
+  },
+  addBtnText: {
+    fontSize: 15,
+    color: '#3B322C',
     fontWeight: '600',
+  },
+  saveBtn: {
+    backgroundColor: '#D4C5B3',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  saveBtnText: {
+    color: '#3B322C',
     fontSize: 16,
+    fontWeight: 'bold',
   },
 });
