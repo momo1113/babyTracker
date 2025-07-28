@@ -4,6 +4,7 @@ const admin = require('firebase-admin');
 const dayjs = require('dayjs');
 
 
+
 const calculateAge = (dobString) => {
     const birthDate = dayjs(dobString);
   const now = dayjs();
@@ -93,7 +94,7 @@ const getBabyProfile = async (req, res) => {
     const latestGrowth = [...growthData]
       .filter(entry => entry.date && entry.weight && entry.height)
       .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-
+    console.log('latestGrowth', latestGrowth)
     let weightPercentile = null;
     let heightPercentile = null;
 
@@ -116,27 +117,47 @@ const getBabyProfile = async (req, res) => {
         },
       };
 
-      const estimatePercentile = (actual, reference) => {
-        const idx = Math.min(Math.max(ageInMonths, 0), reference.length - 1);
-        const mean = reference[idx];
+    const convertUnits = (value, type) => {
+    if (type === 'weight') {
+      // lbs to kg
+      return value / 2.20462;
+    }
+    if (type === 'height') {
+      // inches to cm
+      return value * 2.54;
+    }
+    return value;
+};
 
-        const diff = actual - mean;
+const estimatePercentile = (actualRaw, reference, ageInMonths, type) => {
+  const actual = convertUnits(actualRaw, type);
+  const idx = Math.min(Math.max(ageInMonths, 0), reference.length - 1);
+  const mean = reference[idx];
 
-        if (Math.abs(diff) < 0.3) return 50;
-        if (diff >= 1.2) return 95;
-        if (diff >= 0.7) return 85;
-        if (diff >= 0.3) return 70;
-        if (diff <= -1.2) return 5;
-        if (diff <= -0.7) return 15;
-        if (diff <= -0.3) return 30;
-        return 50;
-      };
+  const diff = actual - mean;
 
-      const ref = WHO_REFERENCE[gender];
-      if (ref) {
-        weightPercentile = estimatePercentile(latestGrowth.weight, ref.weight);
-        heightPercentile = estimatePercentile(latestGrowth.height, ref.height);
-      }
+  if (Math.abs(diff) < 0.3) return 50;
+  if (diff >= 1.7) return 99;  // very high above mean
+  if (diff >= 1.2) return 95;
+  if (diff >= 0.7) return 85;
+  if (diff >= 0.3) return 70;
+
+  if (diff <= -1.7) return 1;  // very low below mean
+  if (diff <= -1.2) return 5;
+  if (diff <= -0.7) return 15;
+  if (diff <= -0.3) return 30;
+
+  return 50;  // default around mean
+};
+
+// Usage example:
+const ref = WHO_REFERENCE[gender.toLowerCase()];
+
+if (ref) {
+  weightPercentile = estimatePercentile(Number(latestGrowth.weight), ref.weight, ageInMonths, 'weight');
+  heightPercentile = estimatePercentile(Number(latestGrowth.height), ref.height, ageInMonths, 'height');
+}
+
     }
 
     return res.json({
