@@ -188,7 +188,7 @@ const deleteGrowthEntry =  async (req, res) => {
     const { dates } = req.body;
 
     if (!Array.isArray(dates) || dates.length === 0) {
-      return res.status(400).json({ error: 'Dates array is required' });
+      return res.status(400).json({ error: 'Please provide at least one valid date in the "dates" field.',});
     }
 
     const docRef = admin.firestore().collection('babyProfiles').doc(userId);
