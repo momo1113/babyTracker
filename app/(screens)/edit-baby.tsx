@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -18,7 +18,8 @@ import { useRouter } from 'expo-router';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 
 import { getAuth } from 'firebase/auth';
-import { storage, ref, uploadBytes, getDownloadURL } from '../../firebaseConfig'; // Adjust path to your firebase config
+import { storage, ref, uploadBytes, getDownloadURL, db } from '../../firebaseConfig'; // Adjust path to your firebase config
+import { doc, getDoc } from 'firebase/firestore';
 
 const GENDERS = [
   { label: 'Female', icon: 'female' },
@@ -51,39 +52,84 @@ export default function EditBabyScreen() {
   const [isCalendarVisible, setIsCalendarVisible] = useState(false);
   const [selectedEntryIndex, setSelectedEntryIndex] = useState(null);
   const [tempDate, setTempDate] = useState('');
+   const [loadingProfile, setLoadingProfile] = useState(true);
 
-  const deleteGrowthEntry = async (datesToDelete) => {
-        const auth = getAuth();
-        const user = auth.currentUser;
-        if (!user) {
-          Alert.alert('Authentication Error', 'Please log in first.');
-          router.push('/auth/login');
-          return;
-        }
+  // Load baby profile data by userId on mount
+  useEffect(() => {
+    const fetchBabyProfile = async () => {
+      const auth = getAuth();
+      const user = auth.currentUser;
+
+      if (!user) {
+        setLoadingProfile(false);
+        return;
+      }
 
       try {
-        const token = await user.getIdToken();
-        const response = await fetch('http://192.168.1.9:3000/baby-profile', {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ dates: datesToDelete }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to delete growth entries.');
+        const docRef = doc(db, 'babyProfiles', user.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setName(data.name || '');
+          setPhotoUrl(data.photoUrl || '');
+          setDob(data.dob || getTodayDate());
+          setGender(data.gender || 'Female');
+          setGrowthData(data.growthData && data.growthData.length > 0 ? data.growthData : [{ date: getTodayDate(), weight: '', height: '' }]);
         }
-
-        const data = await response.json();
-        setGrowthData(data.growthData); // update growthData in state
-        Alert.alert('Success', 'Growth entries deleted.');
-      } catch (error) {
-        Alert.alert('Error', error.message || 'Something went wrong.');
+      } catch (err) {
+        console.error('Failed to load profile:', err);
+      } finally {
+        setLoadingProfile(false);
       }
+    };
+
+    fetchBabyProfile();
+  }, []);
+
+const deleteGrowthEntry = async (indexToDelete) => {
+  const entryToDelete = growthData[indexToDelete];
+
+  // Optimistically update UI
+  const updatedData = [...growthData];
+  updatedData.splice(indexToDelete, 1);
+  setGrowthData(updatedData);
+
+  // Only call backend if entry has a valid date (assumes saved entries have a date)
+  if (!entryToDelete?.date) return;
+
+  const auth = getAuth();
+  const user = auth.currentUser;
+
+  if (!user) {
+    Alert.alert('Authentication Required', 'Please log in to continue.');
+    router.push('/auth/login');
+    return;
+  }
+
+  try {
+    const token = await user.getIdToken();
+
+    const response = await fetch('http://192.168.1.9:3000/baby-profile', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ dates: [entryToDelete.date] }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const message = errorData?.error || 'Failed to delete growth entry from server.';
+      throw new Error(message);
+    }
+
+    Alert.alert('Deleted', 'Growth entry was removed ');
+  } catch (error) {
+    Alert.alert('Error', error.message || 'An error occurred while deleting the entry.');
+  }
 };
+
 
   // Open DOB calendar modal
   const openDobCalendar = () => {
@@ -222,7 +268,7 @@ export default function EditBabyScreen() {
         photoUrl: photoUrl.trim(),
         dob,
         gender,
-        growthData,
+        growthData:JSON.stringify(growthData)
       };
 
       const BASE_URL = 'http://192.168.1.9:3000';
@@ -449,7 +495,7 @@ export default function EditBabyScreen() {
               accessibilityLabel={`Growth entry ${index + 1} height`}
             />
             <TouchableOpacity
-              onPress={() => deleteGrowthEntry(growthData[index].date)}
+              onPress={() => deleteGrowthEntry(index)}
               accessibilityLabel={`Delete growth entry ${index + 1}`}
               style={styles.deleteBtn}
             >
