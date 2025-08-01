@@ -85,7 +85,7 @@ export default function HomeScreen() {
       if (!response.ok) throw new Error(data.error || 'Failed to fetch profile');
 
       setProfileName(data.name);
-      const dob = dayjs(data.dob, 'MM/DD/YYYY', true);
+      const dob = dayjs(data.dob, ['YYYY-MM-DD', 'MM/DD/YYYY'], true);
 
       if (!dob.isValid()) {
         console.error('Invalid DOB format:', data.dob);
